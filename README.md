@@ -54,6 +54,17 @@ You have some options on AUR, the `leshade-git` package that get always the late
 2. `paru -S leshade-git` or `yay -S leshade-git`
 3. Done!
 
+### Gentoo Linux instructions:
+
+Available in [GURU](https://wiki.gentoo.org/wiki/Project:GURU).
+
+**games-util/leshade**
+
+1. Open the terminal
+2. Add the GURU repository as described in [Project:GURU/Information for End Users](https://wiki.gentoo.org/wiki/Project:GURU/Information_for_End_Users)
+3. `emerge --ask games-util/leshade`
+4. Done!
+
 ### Fedora instructions:
 I've managed to create a build to _Fedora copr_ with the latest release of LeShade.
 
