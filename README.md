@@ -48,17 +48,16 @@ You have some options on AUR, the `leshade-git` package that always gets the lat
 1. Open the terminal
 2. `paru -S leshade-bin` or `yay -S leshade-bin`
 3. Done!
+
 **Leshade-git:**
 1. Open the terminal
 2. `paru -S leshade-git` or `yay -S leshade-git`
 3. Done!
 
 ### Gentoo Linux instructions:
-
 Available in [GURU](https://wiki.gentoo.org/wiki/Project:GURU).
 
-**games-util/leshade**
-
+**games-util/leshade:**
 1. Open the terminal
 2. Add the GURU repository as described in [Project:GURU/Information for End Users](https://wiki.gentoo.org/wiki/Project:GURU/Information_for_End_Users)
 3. `emerge --ask games-util/leshade`
@@ -67,7 +66,7 @@ Available in [GURU](https://wiki.gentoo.org/wiki/Project:GURU).
 ### Fedora instructions:
 I've managed to create a build to _Fedora copr_ with the latest release of LeShade.
 
-**leshade**
+**Leshade:**
 1. Open the terminal
 2. ```sudo dnf copr enable ishidaw/leshade```
 3. ```sudo dnf install leshade```
