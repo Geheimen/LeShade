@@ -78,8 +78,8 @@ class PageInstallation(QWidget):
 
         layout_browse.addWidget(self.browse_input)
         layout_browse.addWidget(self.browse_button)
-        layout_browse.addWidget(self.use_native_dialog)
         layout.addLayout(layout_browse)
+        layout.addWidget(self.use_native_dialog)
         layout.addSpacing(10)
 
         layout_api.addWidget(self.radio_opengl, 0, 0)
