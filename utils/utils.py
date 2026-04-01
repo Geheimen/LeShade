@@ -38,10 +38,10 @@ def get_reshade_tags(after: str | None) -> list[str] | None:
     try:
         if after:
             # Other pages
-            tag_page: str = generic_download(f"{TAGS_URL}?after=v{after}", None)
+            tag_page: str | None = generic_download(f"{TAGS_URL}?after=v{after}", None)
         else:
             # First page
-            tag_page: str = generic_download(TAGS_URL, None)
+            tag_page: str | None = generic_download(TAGS_URL, None)
 
         return re.findall(r'(?<=releases/tag/v)[0-9.]+', tag_page)
     except IOError:
