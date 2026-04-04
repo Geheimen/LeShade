@@ -21,6 +21,7 @@ LeShade is a reshade manager for linux. Think of a mod manager, but specifically
 - ReShade with release versions support
 - Uninstalling ReShade per game basis from previous installations
 - Many shaders repositories
+- RenoDX support _(snapshot releases)_
 
 ### Why is Vulkan not in the Common APIs support?
 If you plan to install _ReShade_ on a _Vulkan_ game on Linux, I suggest you use [VkBasalt](https://github.com/DadSchoorse/vkBasalt). When using ReShade on a game that uses Vulkan, you can't just rename a `.dll` and place it in the game's directory, it uses a global directory for ReShade, usually at `C:\ProgramData\ReShade`, and requires those `.dll` files in that directory, along with `.json` files that have the path mentioned in a registry key so ReShade can work with the Vulkan API. On Linux this is not the case. I followed the manual steps and even tried to install `VulkanRT-X64-1.4.341.0-Installer.exe` with _protontricks_ and _WINEPREFIX_, but had no success. You can try to add it yourself and even download the runtimes from Vulkan and replace the `vulkan-1.dll` inside `System32` to see if you have more luck than I did, but I don't think so. If you are a developer who knows how to fix it, you are welcome to contribute to the project. Unfortunately, I can't support ReShade on games that use native Vulkan. Note that this does not apply to DXVK, which works fine.
