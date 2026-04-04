@@ -1,10 +1,11 @@
 import os
 import re
 import urllib.request
+import urllib.error
 import ssl
 import certifi
+import json
 from typing import Any
-import requests
 
 from PySide6.QtCore import QStandardPaths
 
@@ -55,18 +56,23 @@ def get_reshade_tags(after: str | None) -> list[str] | None:
 
 
 def get_renodx_assets() -> list[str] | None:
-    renodx_response: requests.Request.data = requests.get(RENODX_SNAPSHOT_URL)
     assets_names: list[str] = ["None"]
 
+    context = ssl.create_default_context(cafile=certifi.where())
+    req = urllib.request.Request(RENODX_SNAPSHOT_URL, headers={
+                                 'User-Agent': 'Chrome/120.0.0', 'Accept': 'application/json'})
+
     try:
-        if renodx_response.status_code == 200:
-            release: dict[str, Any] = renodx_response.json()
+        with urllib.request.urlopen(req, context=context) as response:
+            release: dict[str, Any] = json.loads(response.read())
             assets: list[dict[str, Any]] = release.get("assets", [])
 
             for asset in assets:
                 assets_names.append(asset["name"])
 
-            return assets_names
-
+            return assets_names if assets_names else None
+    except urllib.error.HTTPError as e:
+        raise urllib.error.HTTPError(
+            f"Failed to fetch assets: {e.code}. ", e.code, e.msg, e.hdrs, e.fp) from e
     except Exception as e:
-        raise requests.RequestException(f"Failed to fetch assets: {e}") from e
+        raise RuntimeError(f"Failed to fetch assets: {e}") from e
