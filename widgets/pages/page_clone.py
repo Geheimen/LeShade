@@ -1,7 +1,6 @@
-from typing import Literal
-import PySide6
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QLabel,
     QProgressBar,
     QPushButton,
@@ -13,15 +12,17 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QThread, Qt, Signal, Slot
 
 from scripts_core.script_shaders import ShadersWorker
+from utils.utils import get_renodx_assets
 
 
 class PageClone(QWidget):
     clone_finished: Signal = Signal(bool)
 
-    def __init__(self):
+    def __init__(self, is_addon_param: bool):
         super().__init__()
 
         self.selections: list[str] = []
+        self.is_addon: bool = is_addon_param
 
         # create layout
         layout = QVBoxLayout()
@@ -100,6 +101,19 @@ class PageClone(QWidget):
                     value.setStyleSheet("font-weight: 100;")
                 layout_checkboxes.addWidget(value)
 
+        # RenoDX
+        self.renodx_assets: list[str] | None = get_renodx_assets()
+        self.lbl_renodx = QLabel("RenoDX - Select game addon")
+        self.renodx_addon = QComboBox()
+
+        if self.renodx_assets:
+            for asset in self.renodx_assets:
+                self.renodx_addon.addItem(asset)
+
+        layout_checkboxes.addSpacing(15)
+        layout_checkboxes.addWidget(self.lbl_renodx)
+        layout_checkboxes.addWidget(self.renodx_addon)
+
         self.scroll_area.setWidget(widget_checkboxes)
 
         self.progress_bar = QProgressBar()
@@ -116,6 +130,18 @@ class PageClone(QWidget):
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.btn_install)
         self.setLayout(layout)
+
+    def set_is_addon(self, value: bool) -> None:
+        self.is_addon = value
+        self.update_renodx_selector()
+
+    def update_renodx_selector(self) -> None:
+        if self.is_addon:
+            self.renodx_addon.setEnabled(True)
+        else:
+            self.renodx_addon.setEnabled(False)
+
+        self.renodx_addon.updatesEnabled()
 
     def on_install(self, game_dir: str) -> None:
         self.start_animation()
@@ -134,7 +160,7 @@ class PageClone(QWidget):
 
         self.clone_thread: QThread = QThread()
         self.clone_worker: ShadersWorker = ShadersWorker(
-            self.selections, game_dir)
+            self.selections, self.renodx_addon.currentText(), game_dir)
 
         self.clone_worker.moveToThread(self.clone_thread)
 
