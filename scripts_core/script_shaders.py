@@ -143,7 +143,12 @@ class ShadersWorker(QObject):
                 renodx_asset_dir: str = os.path.join(
                     self.game_path, renodx_url.split("/")[-1].strip())
 
-                await asyncio.gather(self.download_shaders(shader_url, zipped_shader_dir), self.unzip_shader(self.shader_temp_directory, repo_name, zipped_shader_dir), self.download_renodx_asset(renodx_url, renodx_asset_dir))
+                await asyncio.gather(
+                    self.download_shaders(shader_url, zipped_shader_dir),
+                    self.download_renodx_asset(renodx_url, renodx_asset_dir)
+                )
+
+                await self.unzip_shader(self.shader_temp_directory, repo_name, zipped_shader_dir)
 
                 current_repo += 1
         except Exception as e:
