@@ -60,8 +60,9 @@ class PageClone(QWidget):
         self.cxb_immerse = QCheckBox("iMMERSE")
         self.lbl_immerse = QLabel("MXAO, Sharpen and SMAA.")
 
-        self.cxb_mlut = QCheckBox("MLUT - This repo have over 2GB")
-        self.lbl_mlut = QLabel("Big collection of multi-LUT.")
+        self.cxb_mlut = QCheckBox("MLUT")
+        self.lbl_mlut = QLabel(
+            "<html>Big collection of multi-LUT. <span style='color: #FF5112'><strong>This repo have over 2GB</strong></span></html>")
 
         self.cxb_insane = QCheckBox("Insane shaders")
         self.lbl_insane = QLabel("Utility shaders, eg: Fog Removal.")

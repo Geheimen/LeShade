@@ -16,7 +16,7 @@ REPO_SHADERS = {
         "url": "https://github.com/crosire/reshade-shaders",
         "branch": "slim"
     },
-    "Crosile legacy": {
+    "Crosire legacy": {
         "url": "https://github.com/crosire/reshade-shaders",
         "branch": "legacy"
     },
