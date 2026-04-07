@@ -149,6 +149,9 @@ class InstallationWorker(QObject):
                 reshade_dll_renamed = "d3d11.dll"
             case "D3D 12":
                 reshade_dll_renamed = "dxgi.dll"
+            case "Vulkan":
+                # Need to implement the function to install it.
+                pass
             case _:
                 raise ValueError(f"YET an nsupported API!")
 
