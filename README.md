@@ -28,6 +28,9 @@ If you plan to install _ReShade_ on a _Vulkan_ game on Linux, I suggest you use 
 
 You can get more information about it here: [issue](https://github.com/Ishidawg/LeShade/issues/16).
 
+### Is possible to use ReShade on _"Vulkan games"_?
+Ya, I managed to boot _Star Wars Dark Forces Remastered_ with ReShade, but not on steam and not using LeShade. You can check this video that I made about this matter: [ReShade on Games that uses Vulkan](https://www.youtube.com/watch?v=bkvsivxoZGo)
+
 ## Usage
 The program itself is very intuitive, so if you already used a mod manager or even the ReShade installer *"à la"* wizard you will likely not have any problems. Even though I have made a [video guide](https://youtu.be/ge8558huYfE). You can download the AppImage or Flatpak version on the [release page](https://github.com/Ishidawg/LeShade/releases).
 
