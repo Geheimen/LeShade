@@ -125,4 +125,5 @@ Description of what you have fixed.
 ### Sources:
 - `d3dcompiler_47.dll` *64bit* and *32bit* from [WindowsSDK 10.0.26100.0](https://learn.microsoft.com/en-us/windows/apps/windows-sdk/downloads)
 - `d3d8to9.dll` from [crosire](https://github.com/crosire/d3d8to9?tab=readme-ov-file).
+- icu files _(exectables and dlls)_ from [icu](https://github.com/unicode-org/icu?tab=readme-ov-file)
 - [AppImage](https://github.com/crosire/d3d8to9?tab=readme-ov-file) Tool to build my one of my packages.
