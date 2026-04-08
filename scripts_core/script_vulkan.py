@@ -3,17 +3,19 @@ from utils.utils import EXTRACT_PATH, generic_download
 from zipfile import BadZipFile, ZipFile
 from pathlib import Path
 import subprocess
+import glob
 import os
 import re
 
 VULKANRT_URL: str = "https://sdk.lunarg.com/sdk/download/1.4.341.0/windows/VulkanRT-X64-1.4.341.0-Installer.exe"
-# ICU_URL: str = "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-Win64-MSVC2022.zip"
-ICU_URL: str = "https://github.com/Ishidawg/reshade-installer-linux/raw/main/icu_dll"
+ICU_URL: str = "https://raw.githubusercontent.com/Ishidawg/LeShade/refs/heads/main/icu_dll/icu_dll.zip"
 
 # Distination directories for download stuff
 VULKANRT_PATH: str = os.path.join(EXTRACT_PATH, "vulkanrt.exe")
-ICU_PATH: str = os.path.join(EXTRACT_PATH, "ICU")
+ICU_PATH: str = os.path.join(EXTRACT_PATH, "icu.zip")
 ICU_DIR: str = os.path.join(EXTRACT_PATH, "ICU")
+
+REG_PATH: str = os.path.join(EXTRACT_PATH, "leshade.reg")
 
 
 class InstallVukan():
@@ -40,11 +42,17 @@ class InstallVukan():
 
         # Download, extract and move ICU
         self.download_ICU()
-        # self.extract_icu()
+        self.extract_icu()
         self.move_icu_files_to_sys32(self.steamapps_dir, self.app_id)
 
         # Install vulkanRT
         self.install_vulkanRT(self.app_id)
+
+        self.move_reshade_files(self.steamapps_dir, self.app_id)
+        self.create_reshade_apps(
+            self.steamapps_dir, self.app_id, self.executable_path)
+        self.create_leshade_reg(REG_PATH)
+        self.add_registry_keys(self.app_id, REG_PATH)
 
     def download_vulkanRT(self) -> None:
         if os.path.exists(VULKANRT_PATH):
@@ -76,8 +84,33 @@ class InstallVukan():
         except Exception as e:
             raise IOError(f"Failed to move ICU files to system32: {e}")
 
+    def move_reshade_files(self, steamapps_dir, app_id) -> None:
+        os.makedirs(os.path.join(steamapps_dir, "compatdata", app_id,
+                    "pfx", "drive_c", "ProgramData", "ReShade"), exist_ok=True)
+
+        reshade_files: list[str] = glob.glob(
+            os.path.join(EXTRACT_PATH, "ReShade*"), recursive=True)
+
+        for file in reshade_files:
+            print(file)
+            shutil.copy(file, os.path.join(steamapps_dir, "compatdata",
+                        app_id, "pfx", "drive_c", "ProgramData", "ReShade"))
+
+    def create_reshade_apps(self, steamapps_dir, app_id, game_executable_path) -> None:
+        reshade_apps: str = os.path.join(
+            steamapps_dir, "compatdata", app_id, "pfx", "drive_c", "ProgramData", "ReShade", "ReShadeApps.ini")
+        app_data: str = "Apps=Z:" + \
+            str(game_executable_path).replace("/", "\\")
+
+        if not os.path.exists(reshade_apps):
+            try:
+                with open(reshade_apps, "w") as file:
+                    file.write(app_data)
+            except FileExistsError as e:
+                print(e)
+
     def install_vulkanRT(self, app_id: str) -> None:
-        wine_wrap_command: str = f"wine {VULKANRT_PATH} /S"
+        wine_wrap_command: str = f"wine '{VULKANRT_PATH}' /S"
 
         full_command: list[str] = [
             "protontricks", "-c", wine_wrap_command, app_id]
@@ -136,3 +169,33 @@ class InstallVukan():
             raise ValueError("Error: app_id is empty")
 
         return app_id
+
+    def create_leshade_reg(self, reg_path) -> None:
+        registry_content: str = r"""Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Khronos\Vulkan\ImplicitLayers]
+"C:\\ProgramData\\ReShade\\ReShade64.json"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Software\Khronos\Vulkan\ImplicitLayers]
+"C:\\ProgramData\\ReShade\\ReShade64.json"=dword:00000000
+
+[HKEY_LOCAL_MACHINE\Software\Wow6432Node\Khronos\Vulkan\ImplicitLayers]
+"C:\\ProgramData\\ReShade\\ReShade32.json"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Wine\DllOverrides]
+"vulk
+"""
+        with open(reg_path, "w", encoding="utf-8") as file:
+            file.write(registry_content)
+
+    def add_registry_keys(self, app_id: str, registry_path) -> None:
+        reg_command: str = f"regedit /S {registry_path}"
+
+        full_command: list[str] = ["protontricks", "-c", reg_command, app_id]
+
+        try:
+            subprocess.run(full_command, check=True,
+                           capture_output=True, text=True)
+            print("Deu boa!")
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Failed to write on registry: {e.stderr}")

@@ -171,23 +171,6 @@ class ShadersWorker(QObject):
                         if dir == "Textures":
                             shutil.copytree(
                                 src_dir, textures_dir, dirs_exist_ok=True)
-
-                    # I will leave it here, maybe I will need it someday, who knows...
-                    '''
-                    for file in files:
-                        file_lower: str = file.lower()
-                        src_file: str = os.path.join(root, file)
-
-                        if file_lower.endswith(('.fx', '.fxh')):
-                            if not Path(os.path.join(shaders_dir, file)).exists():
-                                shutil.copy2(
-                                    src_file, os.path.join(shaders_dir, file))
-
-                        if file_lower.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tga')):
-                            if not Path(os.path.join(textures_dir, file)).exists():
-                                shutil.copy2(src_file, os.path.join(
-                                    textures_dir, file))
-                    '''
                 except Exception as e:
                     raise IOError(f"Failed to organize files: {e}") from e
             self.clone_finished.emit(True)

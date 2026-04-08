@@ -57,8 +57,9 @@ class InstallationWorker(QObject):
         self.install_progress.emit(60)
 
         # d3d8 wrapper and hlsl compiler
-        self.hlsl_compiler = download_hlsl_compiler(
-            self.game_path_parent, self.game_arch)
+        if self.game_api != "Vulkan":
+            self.hlsl_compiler = download_hlsl_compiler(
+                self.game_path_parent, self.game_arch)
 
         # means that game folder already had the d3dcompiler_47.dll
         # self.have_hlsl_compiler.emit(self.have_hlsl_compiler) This throws and error like: _pythonToCppCopy: Cannot copy-convert 0x7ff9643809d0 (PySide6.QtCore.SignalInstance) to C++.
@@ -83,7 +84,11 @@ class InstallationWorker(QObject):
             self.install_finished.emit(False)
 
     def ready_reshade_dll(self) -> None:
-        self.prepare_dll()
+        if self.game_api == "Vulkan":
+            InstallVukan(self.game_path)
+        else:
+            self.prepare_dll()
+
         self.create_reshade_directories()
         self.create_reshade_ini()
         self.write_reshade_ini()
@@ -107,7 +112,8 @@ class InstallationWorker(QObject):
 
         ini_data: str = """
             [GENERAL]
-            EffectSearchPaths=.\\reshade-shaders\\Shaders
+            EffectSearchPaths=.\\reshade-shaders\\Shaders\\**
+            IntermediateCachePath=C:\\users\\steamuser\\AppData\\Local\\Temp\\ReShade
             NoDebugInfo=1
             NoEffectCache=0
             NoReloadOnInit=0
@@ -119,8 +125,8 @@ class InstallationWorker(QObject):
             PresetTransitionDuration=1000
             SkipLoadingDisabledEffects=0
             StartupPresetPath=
-            TextureSearchPaths=.\\reshade-shaders\\Textures
-        """
+            TextureSearchPaths=.\\reshade-shaders\\Textures\\**
+        """.strip()
 
         with open(self.reshade_ini) as file:
             reshade_ini_content = file.read()
@@ -150,9 +156,6 @@ class InstallationWorker(QObject):
                 reshade_dll_renamed = "d3d11.dll"
             case "D3D 12":
                 reshade_dll_renamed = "dxgi.dll"
-            case "Vulkan":
-                # Need to implement the function to install it.
-                InstallVukan(self.game_path)
             case _:
                 raise ValueError(f"YET an nsupported API!")
 
