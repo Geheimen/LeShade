@@ -13,6 +13,7 @@ from scripts_core.script_download_dll import (
 )
 
 
+from scripts_core.script_vulkan import InstallVukan
 from utils.utils import EXTRACT_PATH
 
 MACHINE_TYPES = {
@@ -151,7 +152,7 @@ class InstallationWorker(QObject):
                 reshade_dll_renamed = "dxgi.dll"
             case "Vulkan":
                 # Need to implement the function to install it.
-                pass
+                InstallVukan(self.game_path)
             case _:
                 raise ValueError(f"YET an nsupported API!")
 
