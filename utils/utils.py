@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import re
 import urllib.request
 import urllib.error
@@ -14,6 +15,33 @@ CACHE_PATH: str = QStandardPaths.writableLocation(
 EXTRACT_PATH: str = os.path.join(CACHE_PATH, "reshade_extracted")
 TAGS_URL: str = "https://github.com/crosire/reshade/tags"
 RENODX_SNAPSHOT_URL: str = "https://api.github.com/repos/clshortfuse/renodx/releases/tags/snapshot"
+
+
+def format_game_name(game_dir: str) -> str:
+    game_base_name = os.path.basename(game_dir)
+    game_name = os.path.splitext(game_base_name)[0]
+    return game_name
+
+
+def download(url: str, game_path: str = "", game_arch: str = "", file_name: str = "") -> None | bool:
+    file_path: str = os.path.join(game_path, file_name)
+
+    if Path(file_path).exists():
+        print(
+            f"Game folder already have the {file_name}. For safety reasons it will not be replaced.")
+
+        if file_name == "d3dcompiler_47.dll":
+            return True
+        else:
+            return
+
+    if game_arch:
+        arch: str = "win64" if game_arch == "64-bit" else "win32"
+        furl: str = f"{url}/{arch}/d3dcompiler_47.dll"
+        generic_download(furl, file_path)
+        return False
+
+    generic_download(url, file_path)
 
 
 def generic_download(url: str, directory: str | None) -> None | str:
@@ -32,12 +60,6 @@ def generic_download(url: str, directory: str | None) -> None | str:
                 return res.read().decode('utf-8')
     except Exception as e:
         raise IOError(f"Failed to download: {e}") from e
-
-
-def format_game_name(game_dir: str) -> str:
-    game_base_name = os.path.basename(game_dir)
-    game_name = os.path.splitext(game_base_name)[0]
-    return game_name
 
 
 def get_reshade_tags(after: str | None) -> list[str] | None:

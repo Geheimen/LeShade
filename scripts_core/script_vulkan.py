@@ -1,8 +1,9 @@
-import shutil
 from utils.utils import EXTRACT_PATH, generic_download
 from zipfile import BadZipFile, ZipFile
 from pathlib import Path
 import subprocess
+import textwrap
+import shutil
 import glob
 import os
 import re
@@ -171,20 +172,22 @@ class InstallVukan():
         return app_id
 
     def create_leshade_reg(self, reg_path) -> None:
-        registry_content: str = r"""Windows Registry Editor Version 5.00
+        registry_content: str = textwrap.dedent(r"""
+            Windows Registry Editor Version 5.00
 
-[HKEY_CURRENT_USER\Software\Khronos\Vulkan\ImplicitLayers]
-"C:\\ProgramData\\ReShade\\ReShade64.json"=dword:00000000
+            [HKEY_CURRENT_USER\Software\Khronos\Vulkan\ImplicitLayers]
+            "C:\\ProgramData\\ReShade\\ReShade64.json"=dword:00000000
 
-[HKEY_LOCAL_MACHINE\Software\Khronos\Vulkan\ImplicitLayers]
-"C:\\ProgramData\\ReShade\\ReShade64.json"=dword:00000000
+            [HKEY_LOCAL_MACHINE\Software\Khronos\Vulkan\ImplicitLayers]
+            "C:\\ProgramData\\ReShade\\ReShade64.json"=dword:00000000
 
-[HKEY_LOCAL_MACHINE\Software\Wow6432Node\Khronos\Vulkan\ImplicitLayers]
-"C:\\ProgramData\\ReShade\\ReShade32.json"=dword:00000000
+            [HKEY_LOCAL_MACHINE\Software\Wow6432Node\Khronos\Vulkan\ImplicitLayers]
+            "C:\\ProgramData\\ReShade\\ReShade32.json"=dword:00000000
 
-[HKEY_CURRENT_USER\Software\Wine\DllOverrides]
-"vulk
-"""
+            [HKEY_CURRENT_USER\Software\Wine\DllOverrides]
+            "vulkan-1"="native"
+        """).strip()
+
         with open(reg_path, "w", encoding="utf-8") as file:
             file.write(registry_content)
 

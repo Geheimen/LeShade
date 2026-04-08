@@ -1,20 +1,19 @@
-import os
-import struct
-import shutil
 from pathlib import Path
 from PySide6.QtCore import (
     QObject,
     Signal
 )
-
 from scripts_core.script_download_dll import (
     download_d3d8to9,
     download_hlsl_compiler
 )
-
-
 from scripts_core.script_vulkan import InstallVukan
 from utils.utils import EXTRACT_PATH
+
+import textwrap
+import struct
+import shutil
+import os
 
 MACHINE_TYPES = {
     0x014C: "32-bit",
@@ -56,10 +55,8 @@ class InstallationWorker(QObject):
         self.ready_reshade_dll()
         self.install_progress.emit(60)
 
-        # d3d8 wrapper and hlsl compiler
-        if self.game_api != "Vulkan":
-            self.hlsl_compiler = download_hlsl_compiler(
-                self.game_path_parent, self.game_arch)
+        self.hlsl_compiler = download_hlsl_compiler(
+            self.game_path_parent, self.game_arch)
 
         # means that game folder already had the d3dcompiler_47.dll
         # self.have_hlsl_compiler.emit(self.have_hlsl_compiler) This throws and error like: _pythonToCppCopy: Cannot copy-convert 0x7ff9643809d0 (PySide6.QtCore.SignalInstance) to C++.
@@ -110,7 +107,7 @@ class InstallationWorker(QObject):
     def write_reshade_ini(self) -> None:
         reshade_ini_content: str | None = None
 
-        ini_data: str = """
+        ini_data: str = textwrap.dedent("""
             [GENERAL]
             EffectSearchPaths=.\\reshade-shaders\\Shaders\\**
             IntermediateCachePath=C:\\users\\steamuser\\AppData\\Local\\Temp\\ReShade
@@ -126,7 +123,7 @@ class InstallationWorker(QObject):
             SkipLoadingDisabledEffects=0
             StartupPresetPath=
             TextureSearchPaths=.\\reshade-shaders\\Textures\\**
-        """.strip()
+        """).strip()
 
         with open(self.reshade_ini) as file:
             reshade_ini_content = file.read()
