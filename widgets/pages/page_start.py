@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -5,8 +6,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
 )
-
-from PySide6.QtCore import Qt, Signal
 
 
 class PageStart(QWidget):

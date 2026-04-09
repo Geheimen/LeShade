@@ -1,12 +1,10 @@
-from utils.utils import EXTRACT_PATH, generic_download
-from zipfile import BadZipFile, ZipFile
+from utils.utils import EXTRACT_PATH, download, get_game_directory_name, get_steam_appid, get_steamapps_directory, unzip_file
 from pathlib import Path
 import subprocess
 import textwrap
 import shutil
 import glob
 import os
-import re
 
 VULKANRT_URL: str = "https://sdk.lunarg.com/sdk/download/1.4.341.0/windows/VulkanRT-X64-1.4.341.0-Installer.exe"
 ICU_URL: str = "https://raw.githubusercontent.com/Ishidawg/LeShade/refs/heads/main/icu_dll/icu_dll.zip"
@@ -25,90 +23,65 @@ class InstallVukan():
         super().__init__()
 
         self.executable_path: Path = Path(game_dir)
-        self.game_name: str = self.get_game_directory_name(
-            self.executable_path)
-        self.steamapps_dir: str = self.get_steamapps_directory(
-            self.executable_path)
-        self.app_id: str = self.get_steam_appid(
-            self.steamapps_dir, self.game_name)
-        self.system32_prefix: str = ""
+        self.game_name: str = get_game_directory_name(self.executable_path)
+        self.steamapps_dir: str = get_steamapps_directory(self.executable_path)
+        self.app_id: str = get_steam_appid(self.steamapps_dir, self.game_name)
+
+        self.drive_c_path: str = os.path.join(
+            self.steamapps_dir,
+            "compatdata",
+            self.app_id,
+            "pfx",
+            "drive_c"
+        )
+
+        self.system32_prefix: str = os.path.join(
+            self.drive_c_path,
+            "windows",
+            "system32"
+        )
+
+        self.reshade_prefix: str = os.path.join(
+            self.drive_c_path,
+            "ProgramData",
+            "ReShade"
+        )
 
         print(self.executable_path)
         print(self.game_name)
         print(self.steamapps_dir)
         print(self.app_id)
 
-        # Download VULKANRT
-        self.download_vulkanRT()
-
         # Download, extract and move ICU
-        self.download_ICU()
-        self.extract_icu()
-        self.move_icu_files_to_sys32(self.steamapps_dir, self.app_id)
+        self.run_ICU()
 
-        # Install vulkanRT
-        self.install_vulkanRT(self.app_id)
+        # Download and Install VulkanRT
+        self.run_vulkanRT(self.app_id)
 
-        self.move_reshade_files(self.steamapps_dir, self.app_id)
-        self.create_reshade_apps(
-            self.steamapps_dir, self.app_id, self.executable_path)
-        self.create_leshade_reg(REG_PATH)
-        self.add_registry_keys(self.app_id, REG_PATH)
-
-    def download_vulkanRT(self) -> None:
-        if os.path.exists(VULKANRT_PATH):
-            return
-
-        generic_download(VULKANRT_URL, VULKANRT_PATH)
+        # Do ReShade actions
+        self.run_reshade_actions(
+            self.reshade_prefix, self.executable_path, self.app_id)
 
     def download_ICU(self) -> None:
-        if os.path.exists(ICU_DIR) or os.path.exists(ICU_PATH):
-            return
-
-        generic_download(ICU_URL, ICU_PATH)
+        download(url=ICU_URL, file_name=ICU_PATH)
 
     def extract_icu(self) -> None:
         os.makedirs(ICU_DIR, exist_ok=True)
+        unzip_file(ICU_PATH, ICU_DIR)
 
-        try:
-            with ZipFile(ICU_PATH, "r") as zip_file:
-                zip_file.extractall(ICU_DIR)
-        except Exception as e:
-            raise BadZipFile(f"Failed to unzip: {e}")
-
-    def move_icu_files_to_sys32(self, steamapps_dir, app_id) -> None:
-        system32_path: str = os.path.join(
-            steamapps_dir, "compatdata", app_id, "pfx", "drive_c", "windows", "system32")
-
+    def move_icu_files_to_sys32(self, system32_path: str) -> None:
         try:
             shutil.copytree(ICU_DIR, system32_path, dirs_exist_ok=True)
         except Exception as e:
             raise IOError(f"Failed to move ICU files to system32: {e}")
 
-    def move_reshade_files(self, steamapps_dir, app_id) -> None:
-        os.makedirs(os.path.join(steamapps_dir, "compatdata", app_id,
-                    "pfx", "drive_c", "ProgramData", "ReShade"), exist_ok=True)
+    def run_ICU(self) -> None:
+        self.download_ICU()
+        self.extract_icu()
+        self.move_icu_files_to_sys32(self.system32_prefix)
 
-        reshade_files: list[str] = glob.glob(
-            os.path.join(EXTRACT_PATH, "ReShade*"), recursive=True)
-
-        for file in reshade_files:
-            print(file)
-            shutil.copy(file, os.path.join(steamapps_dir, "compatdata",
-                        app_id, "pfx", "drive_c", "ProgramData", "ReShade"))
-
-    def create_reshade_apps(self, steamapps_dir, app_id, game_executable_path) -> None:
-        reshade_apps: str = os.path.join(
-            steamapps_dir, "compatdata", app_id, "pfx", "drive_c", "ProgramData", "ReShade", "ReShadeApps.ini")
-        app_data: str = "Apps=Z:" + \
-            str(game_executable_path).replace("/", "\\")
-
-        if not os.path.exists(reshade_apps):
-            try:
-                with open(reshade_apps, "w") as file:
-                    file.write(app_data)
-            except FileExistsError as e:
-                print(e)
+    def download_vulkanRT(self) -> None:
+        download(url=VULKANRT_URL, file_name=VULKANRT_PATH)
 
     def install_vulkanRT(self, app_id: str) -> None:
         wine_wrap_command: str = f"wine '{VULKANRT_PATH}' /S"
@@ -117,61 +90,41 @@ class InstallVukan():
             "protontricks", "-c", wine_wrap_command, app_id]
 
         try:
-            run = subprocess.run(full_command, check=True,
-                                 capture_output=True, text=True)
-
-            print("VulkanRT Installed!")
+            subprocess.run(full_command, check=True,
+                           capture_output=True, text=True)
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to install VulkanRT: {e.stderr}")
         except FileNotFoundError:
-            raise Exception(f"You need to install protontricks or the command was not found.\nOn arch: sudo pacman -S protontricks\nOn Ubuntu and Debian-Based System: sudo apt install protontricks -y\nOn Fedora: sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && sudo dnf install protontricks -y")
+            raise Exception(
+                f"You need to install protontricks or the command was not found.")
 
-    def get_game_directory_name(self, executable_path: Path) -> str:
-        split_path: tuple[str, ...] = executable_path.parts
-        common_index: int = split_path.index("common")
-        directory_name: str = split_path[common_index + 1]
+    def run_vulkanRT(self, steam_id: str) -> None:
+        self.download_vulkanRT()
+        self.install_vulkanRT(steam_id)
 
-        return directory_name
+    def move_reshade_files(self, reshade_prefix: str) -> None:
+        os.makedirs(reshade_prefix, exist_ok=True)
 
-    def get_steamapps_directory(self, executable_path: Path) -> str:
-        steam_apps: str = ""
+        reshade_files: list[str] = glob.glob(
+            os.path.join(EXTRACT_PATH, "ReShade*"), recursive=True)
 
-        for parent in executable_path.parents:
-            if parent.name == "steamapps":
-                steam_apps = str(parent)
-                break
+        for file in reshade_files:
+            shutil.copy(file, reshade_prefix)
 
-        if not steam_apps:
-            raise ValueError("Error: steamapps dir was not found")
+    def create_reshade_apps(self, reshade_prefix: str, game_executable_path: Path) -> None:
+        reshade_apps: str = os.path.join(reshade_prefix, "ReShadeApps.ini")
+        fix_game_exe_path: str = str(game_executable_path).replace("/", "\\")
 
-        return steam_apps
+        app_data: str = f"Apps=Z:{fix_game_exe_path}"
 
-    def get_steam_appid(self, steamapps_dir: str, game_name: str) -> str:
-        app_id: str = ""
-
-        for manifest_file in Path(steamapps_dir).glob("appmanifest_*.acf"):
+        if not os.path.exists(reshade_apps):
             try:
-                manifest_data: str = manifest_file.read_text(
-                    encoding='utf-8', errors='ignore')
+                with open(reshade_apps, "w") as file:
+                    file.write(app_data)
+            except FileExistsError as e:
+                print(e)
 
-                pattern = rf'"installdir"\s+"{re.escape(game_name)}"'
-
-                if re.search(pattern, manifest_data, re.IGNORECASE):
-                    match = re.search(
-                        r'appmanifest_(\d+)\.acf', manifest_file.name)
-
-                    if match:
-                        app_id = match.group(1)
-                        break
-            except Exception as e:
-                raise Exception(f"Error getting the app_id: {e}")
-
-        if not app_id:
-            raise ValueError("Error: app_id is empty")
-
-        return app_id
-
-    def create_leshade_reg(self, reg_path) -> None:
+    def create_leshade_reg(self, reg_path: str) -> None:
         registry_content: str = textwrap.dedent(r"""
             Windows Registry Editor Version 5.00
 
@@ -191,7 +144,7 @@ class InstallVukan():
         with open(reg_path, "w", encoding="utf-8") as file:
             file.write(registry_content)
 
-    def add_registry_keys(self, app_id: str, registry_path) -> None:
+    def add_registry_keys(self, app_id: str, registry_path: str) -> None:
         reg_command: str = f"regedit /S {registry_path}"
 
         full_command: list[str] = ["protontricks", "-c", reg_command, app_id]
@@ -199,6 +152,11 @@ class InstallVukan():
         try:
             subprocess.run(full_command, check=True,
                            capture_output=True, text=True)
-            print("Deu boa!")
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to write on registry: {e.stderr}")
+
+    def run_reshade_actions(self, reshade_prefix: str, game_executable: Path, app_id: str) -> None:
+        self.move_reshade_files(reshade_prefix)
+        self.create_reshade_apps(reshade_prefix, game_executable)
+        self.create_leshade_reg(REG_PATH)
+        self.add_registry_keys(app_id, REG_PATH)

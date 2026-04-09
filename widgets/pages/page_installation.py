@@ -1,5 +1,5 @@
-import os
-
+from PySide6.QtCore import QThread, Qt, Signal, Slot, QStandardPaths
+from scripts_core.script_installation import InstallationWorker
 from PySide6.QtWidgets import (
     QFileDialog,
     QGridLayout,
@@ -13,10 +13,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QCheckBox
 )
-
-from PySide6.QtCore import QThread, Qt, Signal, Slot, QStandardPaths
-
-from scripts_core.script_installation import InstallationWorker
+import os
 
 HOME = QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.HomeLocation)
@@ -164,28 +161,8 @@ class PageInstallation(QWidget):
         self.btn_install.setEnabled(False)
 
     def update_install_button(self) -> None:
-        if not self.game_path:
-            self.btn_install.setEnabled(False)
-        else:
-            self.btn_install.setEnabled(True)
-
-    @Slot(int)
-    def update_progress(self, value: int) -> None:
-        self.progress_bar.setValue(value)
-
-    @Slot(bool)
-    def on_sucess(self, value: bool) -> None:
-        self.btn_install.setEnabled(True)
-        if value:
-            self.progress_bar.setFormat("Installation finished!")
-            self.install_finished.emit(value)
-
-    @Slot(bool)
-    def on_error(self, value: bool) -> None:
-        self.btn_install.setEnabled(True)
-        if not value:
-            self.progress_bar.setFormat("Error while installing")
-            self.install_finished.emit(value)
+        self.btn_install.setEnabled(
+            True) if self.game_path else self.btn_install.setEnabled(False)
 
     def api_selection(self) -> None:
         available_api: dict = {
@@ -216,3 +193,21 @@ class PageInstallation(QWidget):
 
         self.is_api_dx8()
         self.start_installation()
+
+    @Slot(int)
+    def update_progress(self, value: int) -> None:
+        self.progress_bar.setValue(value)
+
+    @Slot(bool)
+    def on_sucess(self, value: bool) -> None:
+        self.btn_install.setEnabled(value)
+        if value:
+            self.progress_bar.setFormat("Installation finished!")
+            self.install_finished.emit(value)
+
+    @Slot(bool)
+    def on_error(self, value: bool) -> None:
+        self.btn_install.setEnabled(True)
+        if not value:
+            self.progress_bar.setFormat("Error while installing")
+            self.install_finished.emit(value)

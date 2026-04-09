@@ -1,7 +1,7 @@
 from PySide6.QtCore import QStandardPaths
 from zipfile import BadZipfile, ZipFile
+from typing import Any, Match
 from pathlib import Path
-from typing import Any
 import urllib.request
 import urllib.error
 import certifi
@@ -27,12 +27,60 @@ def format_game_name(game_dir: str) -> str:
     return game_name
 
 
+def get_game_directory_name(executable_path: Path) -> str:
+    split_path: tuple[str, ...] = executable_path.parts
+    common_index: int = split_path.index("common")
+    directory_name: str = split_path[common_index + 1]
+
+    return directory_name
+
+
+def get_steamapps_directory(executable_path: Path) -> str:
+    steam_apps: str = ""
+
+    for parent in executable_path.parents:
+        if parent.name == "steamapps":
+            steam_apps = str(parent)
+            break
+
+    if not steam_apps:
+        raise ValueError("Error: steamapps dir was not found")
+
+    return steam_apps
+
+
 def unzip_file(src_file: str, destination_path: str) -> None:
     try:
         with ZipFile(src_file, "r") as zip_file:
             zip_file.extractall(destination_path)
     except Exception as e:
         raise BadZipfile(f"Failed to unzip: {e}")
+
+
+def get_steam_appid(steamapps_dir: str, game_name: str) -> str:
+    app_manifest_pattern: str = "appmanifest_*acf"
+    app_manifest_regex: str = r'appmanifest_(\d+)\.acf'
+    app_id: str = ""
+
+    for manifest_file in Path(steamapps_dir).glob(app_manifest_pattern):
+        try:
+            manifest_data: str = manifest_file.read_text(encoding='utf-8')
+            pattern: str = rf'"installdir"\s+"{re.escape(game_name)}"'
+
+            if re.search(pattern, manifest_data, re.IGNORECASE):
+                match: Match[str] | None = re.search(
+                    app_manifest_regex, manifest_file.name)
+
+                if match:
+                    app_id = match.group(1)
+                    break
+        except Exception as e:
+            raise Exception(f"Error getting the app_id: {e}")
+
+    if not app_id:
+        raise ValueError("Error: app_id is empty")
+
+    return app_id
 
 
 def download(url: str, game_path: str = "", game_arch: str = "", file_name: str = "") -> None | bool:

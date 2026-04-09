@@ -1,7 +1,4 @@
-import shutil
-import glob
-import os
-
+from scripts_core.script_manager import read_hlsl_flag, update_manager, read_manager_content
 from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
@@ -10,9 +7,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget
 )
-
 from PySide6.QtCore import Qt
-from scripts_core.script_manager import read_hlsl_flag, update_manager, read_manager_content
+import shutil
+import glob
+import os
 
 
 class PageUninstall(QWidget):

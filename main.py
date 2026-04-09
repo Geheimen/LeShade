@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import shutil
 import sys
 import os
