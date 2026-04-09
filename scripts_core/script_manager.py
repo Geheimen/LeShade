@@ -21,7 +21,7 @@ def create_manager() -> None:
             print(e)
 
 
-def add_game(game_dir: str, game_exe_path: str, have_hlsl: bool | None) -> None:
+def add_game(game_dir: str, game_exe_path: str, have_hlsl: bool | None, is_vulkan: bool, reshade_dir: str, system32_dir: str, vulkanrt_dir: str) -> None:
     current_data: list[dict] = []
     game_name: str = format_game_name(game_exe_path)
 
@@ -37,8 +37,15 @@ def add_game(game_dir: str, game_exe_path: str, have_hlsl: bool | None) -> None:
     new_entry: dict = {
         "game": game_name,
         "dir": game_dir,
-        "hlsl_compiler": have_hlsl
+        "hlsl_compiler": have_hlsl,
     }
+
+    # Add all the directories so I can read them to uninstall from the prefix
+    if is_vulkan:
+        new_entry["vulkan"] = is_vulkan
+        new_entry["reshade_prx_dir"] = reshade_dir
+        new_entry["system32_prx_dir"] = system32_dir
+        new_entry["vulkanrt_prx_dir"] = vulkanrt_dir
 
     # This list serves only to compare the games that are into mananger.json with the new entry
     game_name_manager: list[str] = []
@@ -68,7 +75,7 @@ def read_manager_content(key: str) -> list[str]:
     return game_content
 
 
-def read_hlsl_flag(index: int, key: str) -> str:
+def read_boolean_flags(index: int, key: str) -> str:
     temp_data: list[str] = []
 
     with open(MANAGER_PATH, "r") as file:

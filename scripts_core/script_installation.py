@@ -28,6 +28,8 @@ class InstallationWorker(QObject):
     current_game_path: Signal = Signal(str)
     have_hlsl_compiler: Signal = Signal(bool)
 
+    vulkan_paths: Signal = Signal(str, str, str)
+
     def __init__(self, game_path: str, game_api: str):
         super().__init__()
 
@@ -77,8 +79,19 @@ class InstallationWorker(QObject):
             self.install_finished.emit(False)
 
     def ready_reshade_dll(self) -> None:
-        InstallVukan(
-            self.game_path) if self.game_api == "Vulkan" else self.prepare_dll()
+        if self.game_api == "Vulkan":
+            vulkan_install: InstallVukan = InstallVukan(self.game_path)
+
+            self.vulkan_paths.emit(
+                vulkan_install.reshade_prefix,
+                vulkan_install.system32_prefix,
+                os.path.join(vulkan_install.drive_c_path,
+                             "Program Files", "VulkanRT")
+            )
+
+            vulkan_install.run()
+        else:
+            self.prepare_dll()
 
         self.create_reshade_directories()
         self.create_reshade_ini()

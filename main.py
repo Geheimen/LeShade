@@ -98,6 +98,11 @@ class MainWindow(QMainWindow):
         self.is_dx8: bool = False
         self.is_vulkan: bool = False
 
+        # prefix directories signals
+        self.reshade_prx_dir: str = ""
+        self.system32_prx_dir: str = ""
+        self.vulkanrt_prx_dir: str = ""
+
         # tracks uninstall page
         self.is_uninstall: bool = False
 
@@ -121,6 +126,8 @@ class MainWindow(QMainWindow):
         self.page_installation.is_vulkan.connect(self.get_is_vulkan)
         self.page_installation.already_have_hlsl_compiler.connect(
             self.get_hlsl_compiler)
+        self.page_installation.forward_vulkan_paths.connect(
+            self.get_vulkan_paths)
         self.page_clone.clone_finished.connect(self.on_clone_finished)
 
         # Clone work around, I get the game_dir and pass as param here, executing the on_clone that has game_dir as a param sequencially.
@@ -177,8 +184,15 @@ class MainWindow(QMainWindow):
                     self.enable_next_button()
 
                     # Add game to the uninstall list widget
-                    add_game(self.game_directory,
-                             self.game_exe_path, self.have_hlsl)
+                    add_game(
+                        self.game_directory,
+                        self.game_exe_path,
+                        self.have_hlsl,
+                        self.is_vulkan,
+                        self.reshade_prx_dir,
+                        self.system32_prx_dir,
+                        self.vulkanrt_prx_dir
+                    )
 
                     if self.is_dx8:
                         self.manage_dx8_page(True)
@@ -309,7 +323,6 @@ class MainWindow(QMainWindow):
     def get_is_vulkan(self, value: bool) -> None:
         if value:
             self.is_vulkan = value
-            print("EHHH VULKANNNNNNNN")
             return
 
         if not value:
@@ -324,6 +337,12 @@ class MainWindow(QMainWindow):
             self.is_addon = False
 
         self.page_clone.set_is_addon(self.is_addon)
+
+    @Slot(str, str, str)
+    def get_vulkan_paths(self, reshade: str, sys32: str, vulkanrt: str) -> None:
+        self.reshade_prx_dir = reshade
+        self.system32_prx_dir = sys32
+        self.vulkanrt_prx_dir = vulkanrt
 
     @Slot(str)
     def get_game_directory(self, value: str) -> None:

@@ -27,6 +27,8 @@ class PageInstallation(QWidget):
     is_vulkan: Signal = Signal(bool)
     already_have_hlsl_compiler: Signal = Signal(bool)
 
+    forward_vulkan_paths: Signal = Signal(str, str, str)
+
     def __init__(self):
         super().__init__()
 
@@ -135,6 +137,8 @@ class PageInstallation(QWidget):
         self.install_worker.install_finished.connect(self.on_error)
         self.install_worker.current_game_path.connect(self.get_game_dir)
         self.install_worker.have_hlsl_compiler.connect(self.get_hlsl_compiler)
+        self.install_worker.vulkan_paths.connect(
+            self.forward_vulkan_paths.emit)
 
         self.install_worker.install_finished.connect(self.install_thread.quit)
         self.install_worker.install_finished.connect(

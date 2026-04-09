@@ -47,23 +47,15 @@ class InstallVukan():
             "ReShade"
         )
 
-        print(self.executable_path)
-        print(self.game_name)
-        print(self.steamapps_dir)
-        print(self.app_id)
-
         if remove:
+            os.makedirs(EXTRACT_PATH, exist_ok=True)
             self.create_remove_leshade_reg(REMOVE_REG_PATH, True)
             self.add_remove_registry_keys(self.app_id, REMOVE_REG_PATH, True)
             return
 
-        # Download, extract and move ICU
+    def run(self) -> None:
         self.run_ICU()
-
-        # Download and Install VulkanRT
         self.run_vulkanRT(self.app_id)
-
-        # Do ReShade actions
         self.run_reshade_actions(
             self.reshade_prefix, self.executable_path, self.app_id)
 
