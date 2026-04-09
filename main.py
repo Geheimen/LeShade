@@ -22,6 +22,7 @@ from widgets.pages.page_download import PageDownload
 from widgets.pages.page_installation import PageInstallation
 from widgets.pages.page_clone import PageClone
 from widgets.pages.page_dx8 import PageDX8
+from widgets.pages.page_vulkan import PageVulkan
 from widgets.pages.page_uninstall import PageUninstall
 from widgets.widget_bottom_buttons import WidgetBottomButtons
 
@@ -86,6 +87,7 @@ class MainWindow(QMainWindow):
         self.page_installation: PageInstallation = PageInstallation()
         self.page_clone: PageClone = PageClone(self.is_addon)
         self.page_dx8: PageDX8 = PageDX8()
+        self.page_vulkan: PageVulkan = PageVulkan()
 
         self.pages: list[QWidget] = [self.page_start,
                                      self.page_download, self.page_installation, self.page_clone]
@@ -195,18 +197,21 @@ class MainWindow(QMainWindow):
                     )
 
                     if self.is_dx8:
-                        self.manage_dx8_page(True)
-                    else:
-                        self.manage_dx8_page(False)
+                        self.manage_extra_page(True, self.page_dx8)
+
+                    if self.is_vulkan:
+                        self.manage_extra_page(True, self.page_vulkan)
+
             case Pages.WRAPPER:
                 self.enable_next_button()
             case _:
                 raise ValueError(
                     "The page that your trying to access does not exist")
 
-    def manage_dx8_page(self, append:  bool) -> None:
+    def manage_extra_page(self, append: bool, page: QWidget) -> None:
         if append:
-            self.pages.append(self.page_dx8)
+            if page not in self.pages:
+                self.pages.append(page)
             return
 
         if not append and len(self.pages) == 5:
@@ -225,7 +230,14 @@ class MainWindow(QMainWindow):
             return
 
     def update_next_button(self) -> None:
-        if self.pages_index == Pages.CLONE and not self.is_dx8 or self.pages_index == Pages.WRAPPER:
+        # See if needs extra page on Clone widget
+        clone_is_end = (self.pages_index ==
+                        Pages.CLONE) and not self.is_dx8 and not self.is_vulkan
+
+        # See if we are oany extra page
+        wrapper_is_end = (self.pages_index == Pages.WRAPPER)
+
+        if clone_is_end or wrapper_is_end:
             self.action_buttons.btn_next.setText("Close")
             self.action_buttons.btn_next.clicked.disconnect()
             self.action_buttons.btn_next.clicked.connect(self.close)
@@ -347,7 +359,11 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def get_game_directory(self, value: str) -> None:
         self.game_directory = value
-        self.page_dx8 = PageDX8(format_game_name(self.game_exe_path))
+
+        game_name: str = format_game_name(self.game_exe_path)
+
+        self.page_dx8 = PageDX8(game_name)
+        self.page_vulkan = PageVulkan(game_name)
 
     @Slot(str)
     def get_game_executable_path(self, value: str) -> None:
@@ -367,7 +383,6 @@ def main() -> None:
 
     app.setOrganizationName("Ishidawg")
     app.setApplicationName("LeShade")
-    # app.setDesktopFileName("io.github.ishidawg.LeShade")
 
     local_dir: str = get_localdir()
     icon_path: str = os.path.join(local_dir, "assets", "logo.png")
