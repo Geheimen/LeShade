@@ -14,12 +14,12 @@ VULKANRT_PATH: str = os.path.join(EXTRACT_PATH, "vulkanrt.exe")
 ICU_PATH: str = os.path.join(EXTRACT_PATH, "icu.zip")
 ICU_DIR: str = os.path.join(EXTRACT_PATH, "ICU")
 
-REG_PATH: str = os.path.join(EXTRACT_PATH, "leshade.reg")
+ADD_REG_PATH: str = os.path.join(EXTRACT_PATH, "leshade.reg")
+REMOVE_REG_PATH: str = os.path.join(EXTRACT_PATH, "remove.reg")
 
 
 class InstallVukan():
-
-    def __init__(self, game_dir: str) -> None:
+    def __init__(self, game_dir: str, remove: bool = False) -> None:
         super().__init__()
 
         self.executable_path: Path = Path(game_dir)
@@ -51,6 +51,11 @@ class InstallVukan():
         print(self.game_name)
         print(self.steamapps_dir)
         print(self.app_id)
+
+        if remove:
+            self.create_remove_leshade_reg(REMOVE_REG_PATH, True)
+            self.add_remove_registry_keys(self.app_id, REMOVE_REG_PATH, True)
+            return
 
         # Download, extract and move ICU
         self.run_ICU()
@@ -124,8 +129,8 @@ class InstallVukan():
             except FileExistsError as e:
                 print(e)
 
-    def create_leshade_reg(self, reg_path: str) -> None:
-        registry_content: str = textwrap.dedent(r"""
+    def create_remove_leshade_reg(self, reg_path: str, remove: bool = False) -> None:
+        registry_add_content: str = textwrap.dedent(r"""
             Windows Registry Editor Version 5.00
 
             [HKEY_CURRENT_USER\Software\Khronos\Vulkan\ImplicitLayers]
@@ -141,10 +146,23 @@ class InstallVukan():
             "vulkan-1"="native"
         """).strip()
 
-        with open(reg_path, "w", encoding="utf-8") as file:
-            file.write(registry_content)
+        registry_remove_content: str = textwrap.dedent(r"""
+            Windows Registry Editor Version 5.00
 
-    def add_registry_keys(self, app_id: str, registry_path: str) -> None:
+            [-HKEY_CURRENT_USER\Software\Khronos\Vulkan\ImplicitLayers]
+            [-HKEY_LOCAL_MACHINE\Software\Khronos\Vulkan\ImplicitLayers]
+            [-HKEY_LOCAL_MACHINE\Software\Wow6432Node\Khronos\Vulkan\ImplicitLayers]
+            [HKEY_CURRENT_USER\Software\Wine\DllOverrides]
+            "vulkan-1"=-
+        """).strip()
+
+        with open(reg_path, "w", encoding="utf-8") as file:
+            if remove:
+                file.write(registry_remove_content)
+            else:
+                file.write(registry_add_content)
+
+    def add_remove_registry_keys(self, app_id: str, registry_path: str, remove: bool = False) -> None:
         reg_command: str = f"regedit /S {registry_path}"
 
         full_command: list[str] = ["protontricks", "-c", reg_command, app_id]
@@ -153,10 +171,13 @@ class InstallVukan():
             subprocess.run(full_command, check=True,
                            capture_output=True, text=True)
         except subprocess.CalledProcessError as e:
-            raise Exception(f"Failed to write on registry: {e.stderr}")
+            if remove:
+                raise Exception(f"Failed to remove keys: {e.stderr}")
+            else:
+                raise Exception(f"Failed to write on registry: {e.stderr}")
 
     def run_reshade_actions(self, reshade_prefix: str, game_executable: Path, app_id: str) -> None:
         self.move_reshade_files(reshade_prefix)
         self.create_reshade_apps(reshade_prefix, game_executable)
-        self.create_leshade_reg(REG_PATH)
-        self.add_registry_keys(app_id, REG_PATH)
+        self.create_remove_leshade_reg(ADD_REG_PATH)
+        self.add_remove_registry_keys(app_id, ADD_REG_PATH)

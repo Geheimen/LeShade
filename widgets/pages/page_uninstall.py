@@ -12,6 +12,8 @@ import shutil
 import glob
 import os
 
+from scripts_core.script_vulkan import InstallVukan
+
 
 class PageUninstall(QWidget):
 
@@ -45,7 +47,8 @@ class PageUninstall(QWidget):
         self.setLayout(layout)
 
     def on_uninstall_clicked(self) -> None:
-        self.uninstall_reshade(self.game_list, self.games_dir)
+        self.uninstall_reshade(
+            self.game_list, self.games_dir)
 
     def add_items(self, games: list[str], widget_list: QListWidget):
         index: int = 1
@@ -93,6 +96,13 @@ class PageUninstall(QWidget):
                     for file_found in glob_result:
                         if os.path.exists(file_found):
                             os.remove(file_found)
+
+                # Remove keys from regestry
+                # Need to implement flags  like:
+                # reshade_dir, system32_dir, vulkanRT_dir
+                # Also, need to remove all of the ICU files
+                # print("Cleaning registry")
+                # InstallVukan(game_path, True)
 
             # Remove game from list and reset
             widget_list.takeItem(current_row)

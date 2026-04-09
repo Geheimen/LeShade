@@ -96,6 +96,7 @@ class MainWindow(QMainWindow):
         self.install_finished: bool = False
         self.clone_finished: bool = False
         self.is_dx8: bool = False
+        self.is_vulkan: bool = False
 
         # tracks uninstall page
         self.is_uninstall: bool = False
@@ -117,6 +118,7 @@ class MainWindow(QMainWindow):
         self.page_installation.current_executable_path.connect(
             self.get_game_executable_path)
         self.page_installation.is_dx8.connect(self.get_is_dx8)
+        self.page_installation.is_vulkan.connect(self.get_is_vulkan)
         self.page_installation.already_have_hlsl_compiler.connect(
             self.get_hlsl_compiler)
         self.page_clone.clone_finished.connect(self.on_clone_finished)
@@ -301,6 +303,17 @@ class MainWindow(QMainWindow):
 
         if not value:
             self.is_dx8 = value
+            return
+
+    @Slot(bool)
+    def get_is_vulkan(self, value: bool) -> None:
+        if value:
+            self.is_vulkan = value
+            print("EHHH VULKANNNNNNNN")
+            return
+
+        if not value:
+            self.is_vulkan = value
             return
 
     @Slot(bool)

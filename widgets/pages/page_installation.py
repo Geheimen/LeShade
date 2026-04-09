@@ -24,6 +24,7 @@ class PageInstallation(QWidget):
     current_game_directory: Signal = Signal(str)
     current_executable_path: Signal = Signal(str)
     is_dx8: Signal = Signal(bool)
+    is_vulkan: Signal = Signal(bool)
     already_have_hlsl_compiler: Signal = Signal(bool)
 
     def __init__(self):
@@ -148,6 +149,12 @@ class PageInstallation(QWidget):
         else:
             self.is_dx8.emit(False)
 
+    def is_api_vulkan(self) -> None:
+        if self.game_api == self.radio_vulkan.text():
+            self.is_vulkan.emit(True)
+        else:
+            self.is_vulkan.emit(False)
+
     def get_game_dir(self, value: str) -> None:
         self.current_game_directory.emit(value)
 
@@ -192,6 +199,7 @@ class PageInstallation(QWidget):
             return
 
         self.is_api_dx8()
+        self.is_api_vulkan()
         self.start_installation()
 
     @Slot(int)
