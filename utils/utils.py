@@ -155,3 +155,19 @@ def get_renodx_assets() -> list[str] | None:
             f"Failed to fetch assets: {e.code}. ", e.code, e.msg, e.hdrs, e.fp) from e
     except Exception as e:
         raise RuntimeError(f"Failed to fetch assets: {e}") from e
+
+
+def get_clean_env() -> dict[str, str]:
+    env: dict[str, str] = os.environ.copy()
+
+    env.pop("PYTHONPATH", None)
+    env.pop("PYTHONHOME", None)
+
+    if "LD_LIBRARY_PATH_ORIG" in env:
+        env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH_ORIG"]
+    elif "APPDIR_ORIG_LD_LIBRARY_PATH" in env:
+        env["LD_LIBRARY_PATH"] = env["APPDIR_ORIG_LD_LIBRARY_PATH"]
+    else:
+        env.pop("LD_LIBRARY_PATH", None)
+
+    return env

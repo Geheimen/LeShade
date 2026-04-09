@@ -1,4 +1,4 @@
-from utils.utils import EXTRACT_PATH, download, get_game_directory_name, get_steam_appid, get_steamapps_directory, unzip_file
+from utils.utils import EXTRACT_PATH, download, get_clean_env, get_game_directory_name, get_steam_appid, get_steamapps_directory, unzip_file
 from pathlib import Path
 import subprocess
 import textwrap
@@ -88,8 +88,12 @@ class InstallVulkan():
             "protontricks", "-c", wine_wrap_command, app_id]
 
         try:
-            subprocess.run(full_command, check=True,
-                           capture_output=True, text=True)
+            subprocess.run(full_command,
+                           check=True,
+                           capture_output=True,
+                           text=True,
+                           env=get_clean_env()
+                           )
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to install VulkanRT: {e.stderr}")
         except FileNotFoundError:
@@ -161,8 +165,12 @@ class InstallVulkan():
         full_command: list[str] = ["protontricks", "-c", reg_command, app_id]
 
         try:
-            subprocess.run(full_command, check=True,
-                           capture_output=True, text=True)
+            subprocess.run(full_command,
+                           check=True,
+                           capture_output=True,
+                           text=True,
+                           env=get_clean_env()
+                           )
         except subprocess.CalledProcessError as e:
             if remove:
                 raise Exception(f"Failed to remove keys: {e.stderr}")
