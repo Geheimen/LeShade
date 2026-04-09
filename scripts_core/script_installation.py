@@ -1,19 +1,19 @@
-import os
-import struct
-import shutil
 from pathlib import Path
 from PySide6.QtCore import (
     QObject,
     Signal
 )
-
 from scripts_core.script_download_dll import (
     download_d3d8to9,
     download_hlsl_compiler
 )
-
-
+from scripts_core.script_vulkan import InstallVulkan
 from utils.utils import EXTRACT_PATH
+
+import textwrap
+import struct
+import shutil
+import os
 
 MACHINE_TYPES = {
     0x014C: "32-bit",
@@ -27,6 +27,8 @@ class InstallationWorker(QObject):
     install_finished: Signal = Signal(bool)
     current_game_path: Signal = Signal(str)
     have_hlsl_compiler: Signal = Signal(bool)
+
+    vulkan_paths: Signal = Signal(str, str, str)
 
     def __init__(self, game_path: str, game_api: str):
         super().__init__()
@@ -55,16 +57,11 @@ class InstallationWorker(QObject):
         self.ready_reshade_dll()
         self.install_progress.emit(60)
 
-        # d3d8 wrapper and hlsl compiler
         self.hlsl_compiler = download_hlsl_compiler(
             self.game_path_parent, self.game_arch)
 
-        # means that game folder already had the d3dcompiler_47.dll
-        # self.have_hlsl_compiler.emit(self.have_hlsl_compiler) This throws and error like: _pythonToCppCopy: Cannot copy-convert 0x7ff9643809d0 (PySide6.QtCore.SignalInstance) to C++.
-        if self.hlsl_compiler:
-            self.have_hlsl_compiler.emit(True)
-        else:
-            self.have_hlsl_compiler.emit(False)
+        # means that game folder already had the d3dcompiler_47.dll - emit True or False
+        self.have_hlsl_compiler.emit(self.hlsl_compiler)
 
         if self.game_api == "D3D 8":
             self.install_progress.emit(90)
@@ -82,7 +79,20 @@ class InstallationWorker(QObject):
             self.install_finished.emit(False)
 
     def ready_reshade_dll(self) -> None:
-        self.prepare_dll()
+        if self.game_api == "Vulkan":
+            vulkan_install: InstallVulkan = InstallVulkan(self.game_path)
+
+            self.vulkan_paths.emit(
+                vulkan_install.reshade_prefix,
+                vulkan_install.system32_prefix,
+                os.path.join(vulkan_install.drive_c_path,
+                             "Program Files", "VulkanRT")
+            )
+
+            vulkan_install.run()
+        else:
+            self.prepare_dll()
+
         self.create_reshade_directories()
         self.create_reshade_ini()
         self.write_reshade_ini()
@@ -104,9 +114,10 @@ class InstallationWorker(QObject):
     def write_reshade_ini(self) -> None:
         reshade_ini_content: str | None = None
 
-        ini_data: str = """
+        ini_data: str = textwrap.dedent("""
             [GENERAL]
-            EffectSearchPaths=.\\reshade-shaders\\Shaders
+            EffectSearchPaths=.\\reshade-shaders\\Shaders\\**
+            IntermediateCachePath=C:\\users\\steamuser\\AppData\\Local\\Temp\\ReShade
             NoDebugInfo=1
             NoEffectCache=0
             NoReloadOnInit=0
@@ -118,8 +129,8 @@ class InstallationWorker(QObject):
             PresetTransitionDuration=1000
             SkipLoadingDisabledEffects=0
             StartupPresetPath=
-            TextureSearchPaths=.\\reshade-shaders\\Textures
-        """
+            TextureSearchPaths=.\\reshade-shaders\\Textures\\**
+        """).strip()
 
         with open(self.reshade_ini) as file:
             reshade_ini_content = file.read()
@@ -149,11 +160,8 @@ class InstallationWorker(QObject):
                 reshade_dll_renamed = "d3d11.dll"
             case "D3D 12":
                 reshade_dll_renamed = "dxgi.dll"
-            case "Vulkan":
-                # Need to implement the function to install it.
-                pass
             case _:
-                raise ValueError(f"YET an nsupported API!")
+                raise ValueError(f"YET an unsupported API!")
 
         reshade_dll_renamed_destination: str = os.path.join(
             self.game_path_parent, reshade_dll_renamed)

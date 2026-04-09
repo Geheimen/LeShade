@@ -1,3 +1,6 @@
+from scripts_core.script_shaders import ShadersWorker
+from PySide6.QtCore import QThread, Qt, Signal, Slot
+from utils.utils import get_renodx_assets
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -8,11 +11,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget
 )
-
-from PySide6.QtCore import QThread, Qt, Signal, Slot
-
-from scripts_core.script_shaders import ShadersWorker
-from utils.utils import get_renodx_assets
 
 
 class PageClone(QWidget):
@@ -137,11 +135,8 @@ class PageClone(QWidget):
         self.update_renodx_selector()
 
     def update_renodx_selector(self) -> None:
-        if self.is_addon:
-            self.renodx_addon.setEnabled(True)
-        else:
-            self.renodx_addon.setEnabled(False)
-
+        # is_addon = True or False
+        self.renodx_addon.setEnabled(self.is_addon)
         self.renodx_addon.updatesEnabled()
 
     def on_install(self, game_dir: str) -> None:

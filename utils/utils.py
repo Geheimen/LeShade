@@ -1,19 +1,104 @@
-import os
-import re
+from PySide6.QtCore import QStandardPaths
+from zipfile import BadZipfile, ZipFile
+from typing import Any, Match
+from pathlib import Path
 import urllib.request
 import urllib.error
-import ssl
 import certifi
 import json
-from typing import Any
-
-from PySide6.QtCore import QStandardPaths
+import ssl
+import re
+import os
 
 CACHE_PATH: str = QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.CacheLocation)
 EXTRACT_PATH: str = os.path.join(CACHE_PATH, "reshade_extracted")
 TAGS_URL: str = "https://github.com/crosire/reshade/tags"
 RENODX_SNAPSHOT_URL: str = "https://api.github.com/repos/clshortfuse/renodx/releases/tags/snapshot"
+
+
+def make_extract_dir() -> None:
+    os.makedirs(EXTRACT_PATH, exist_ok=True)
+
+
+def format_game_name(game_dir: str) -> str:
+    game_base_name = os.path.basename(game_dir)
+    game_name = os.path.splitext(game_base_name)[0]
+    return game_name
+
+
+def get_game_directory_name(executable_path: Path) -> str:
+    split_path: tuple[str, ...] = executable_path.parts
+    common_index: int = split_path.index("common")
+    directory_name: str = split_path[common_index + 1]
+
+    return directory_name
+
+
+def get_steamapps_directory(executable_path: Path) -> str:
+    steam_apps: str = ""
+
+    for parent in executable_path.parents:
+        if parent.name == "steamapps":
+            steam_apps = str(parent)
+            break
+
+    if not steam_apps:
+        raise ValueError("Error: steamapps dir was not found")
+
+    return steam_apps
+
+
+def unzip_file(src_file: str, destination_path: str) -> None:
+    try:
+        with ZipFile(src_file, "r") as zip_file:
+            zip_file.extractall(destination_path)
+    except Exception as e:
+        raise BadZipfile(f"Failed to unzip: {e}")
+
+
+def get_steam_appid(steamapps_dir: str, game_name: str) -> str:
+    app_manifest_pattern: str = "appmanifest_*acf"
+    app_manifest_regex: str = r'appmanifest_(\d+)\.acf'
+    app_id: str = ""
+
+    for manifest_file in Path(steamapps_dir).glob(app_manifest_pattern):
+        try:
+            manifest_data: str = manifest_file.read_text(encoding='utf-8')
+            pattern: str = rf'"installdir"\s+"{re.escape(game_name)}"'
+
+            if re.search(pattern, manifest_data, re.IGNORECASE):
+                match: Match[str] | None = re.search(
+                    app_manifest_regex, manifest_file.name)
+
+                if match:
+                    app_id = match.group(1)
+                    break
+        except Exception as e:
+            raise Exception(f"Error getting the app_id: {e}")
+
+    if not app_id:
+        raise ValueError("Error: app_id is empty")
+
+    return app_id
+
+
+def download(url: str, game_path: str = "", game_arch: str = "", file_name: str = "") -> None | bool:
+    file_path: str = os.path.join(game_path, file_name)
+
+    if Path(file_path).exists():
+        print(
+            f"Game folder already have the {file_name}. For safety reasons it will not be replaced.")
+
+        return True if file_name == "d3dcompiler_47.dll" else None
+
+    if game_arch:
+        arch: str = "win64" if game_arch == "64-bit" else "win32"
+        furl: str = f"{url}/{arch}/d3dcompiler_47.dll"
+        generic_download(furl, file_path)
+        return False
+
+    generic_download(url, file_path)
 
 
 def generic_download(url: str, directory: str | None) -> None | str:
@@ -32,12 +117,6 @@ def generic_download(url: str, directory: str | None) -> None | str:
                 return res.read().decode('utf-8')
     except Exception as e:
         raise IOError(f"Failed to download: {e}") from e
-
-
-def format_game_name(game_dir: str) -> str:
-    game_base_name = os.path.basename(game_dir)
-    game_name = os.path.splitext(game_base_name)[0]
-    return game_name
 
 
 def get_reshade_tags(after: str | None) -> list[str] | None:

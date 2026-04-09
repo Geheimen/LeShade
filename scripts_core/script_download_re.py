@@ -1,14 +1,12 @@
-import os
-import glob
-from pathlib import Path
+from utils.utils import EXTRACT_PATH, generic_download, make_extract_dir, unzip_file
 from PySide6.QtCore import (
     QObject,
     QStandardPaths,
     Signal
 )
-
-from scripts_core.script_prepare_re import unzip_reshade
-from utils.utils import generic_download
+from pathlib import Path
+import glob
+import os
 
 # URL examples
 # https://reshade.me/downloads/ReShade_Setup_6.7.1.exe
@@ -38,14 +36,11 @@ class DownloadWorker(QObject):
         self.build_url()
 
     def run(self) -> None:
+        make_extract_dir()
         self.search_reshade_on_download_dir()
         self.perhaps_dir = self.prevent_download()
 
         self.ensure_reshade()
-        # debug matters
-        # print(self.reshade_dir)
-        # print(f"dir: {self.reshade_dir.split("/")[-1]}")
-        # print(f"url: {self.reshade_url.split("/")[-1]}")
 
     def build_url(self) -> None:
         try:
@@ -83,7 +78,7 @@ class DownloadWorker(QObject):
             self.unzip_reshade()
 
     def unzip_reshade(self) -> None:
-        unzip_reshade(self.reshade_dir)
+        unzip_file(self.reshade_dir, EXTRACT_PATH)
 
     def prevent_download(self) -> str:
         file_name: str = self.reshade_url.split("/")[-1]

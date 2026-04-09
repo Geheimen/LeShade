@@ -1,5 +1,5 @@
-import os
-
+from PySide6.QtCore import QThread, Qt, Signal, Slot, QStandardPaths
+from scripts_core.script_installation import InstallationWorker
 from PySide6.QtWidgets import (
     QFileDialog,
     QGridLayout,
@@ -13,10 +13,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QCheckBox
 )
-
-from PySide6.QtCore import QThread, Qt, Signal, Slot, QStandardPaths
-
-from scripts_core.script_installation import InstallationWorker
+import os
 
 HOME = QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.HomeLocation)
@@ -27,7 +24,10 @@ class PageInstallation(QWidget):
     current_game_directory: Signal = Signal(str)
     current_executable_path: Signal = Signal(str)
     is_dx8: Signal = Signal(bool)
+    is_vulkan: Signal = Signal(bool)
     already_have_hlsl_compiler: Signal = Signal(bool)
+
+    forward_vulkan_paths: Signal = Signal(str, str, str)
 
     def __init__(self):
         super().__init__()
@@ -63,7 +63,10 @@ class PageInstallation(QWidget):
         self.radio_d3d10 = QRadioButton("D3D 10")
         self.radio_d3d11 = QRadioButton("D3D 11")
         self.radio_d3d12 = QRadioButton("D3D 12")
+        self.radio_vulkan = QRadioButton("Vulkan")
         self.radio_d3d12.setChecked(True)
+
+        self.vulkan_warning = QLabel("(Steam only)")
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(True)
@@ -88,6 +91,8 @@ class PageInstallation(QWidget):
         layout_api.addWidget(self.radio_d3d10, 1, 0)
         layout_api.addWidget(self.radio_d3d11, 1, 1)
         layout_api.addWidget(self.radio_d3d12, 1, 2)
+        layout_api.addWidget(self.radio_vulkan, 2, 0)
+        layout_api.addWidget(self.vulkan_warning, 2, 1)
         layout.addLayout(layout_api)
         layout.addSpacing(10)
 
@@ -135,6 +140,8 @@ class PageInstallation(QWidget):
         self.install_worker.install_finished.connect(self.on_error)
         self.install_worker.current_game_path.connect(self.get_game_dir)
         self.install_worker.have_hlsl_compiler.connect(self.get_hlsl_compiler)
+        self.install_worker.vulkan_paths.connect(
+            self.forward_vulkan_paths.emit)
 
         self.install_worker.install_finished.connect(self.install_thread.quit)
         self.install_worker.install_finished.connect(
@@ -149,6 +156,12 @@ class PageInstallation(QWidget):
         else:
             self.is_dx8.emit(False)
 
+    def is_api_vulkan(self) -> None:
+        if self.game_api == self.radio_vulkan.text():
+            self.is_vulkan.emit(True)
+        else:
+            self.is_vulkan.emit(False)
+
     def get_game_dir(self, value: str) -> None:
         self.current_game_directory.emit(value)
 
@@ -162,28 +175,8 @@ class PageInstallation(QWidget):
         self.btn_install.setEnabled(False)
 
     def update_install_button(self) -> None:
-        if not self.game_path:
-            self.btn_install.setEnabled(False)
-        else:
-            self.btn_install.setEnabled(True)
-
-    @Slot(int)
-    def update_progress(self, value: int) -> None:
-        self.progress_bar.setValue(value)
-
-    @Slot(bool)
-    def on_sucess(self, value: bool) -> None:
-        self.btn_install.setEnabled(True)
-        if value:
-            self.progress_bar.setFormat("Installation finished!")
-            self.install_finished.emit(value)
-
-    @Slot(bool)
-    def on_error(self, value: bool) -> None:
-        self.btn_install.setEnabled(True)
-        if not value:
-            self.progress_bar.setFormat("Error while installing")
-            self.install_finished.emit(value)
+        self.btn_install.setEnabled(
+            True) if self.game_path else self.btn_install.setEnabled(False)
 
     def api_selection(self) -> None:
         available_api: dict = {
@@ -192,7 +185,8 @@ class PageInstallation(QWidget):
             self.radio_d3d9: self.radio_d3d9.text(),
             self.radio_d3d10: self.radio_d3d10.text(),
             self.radio_d3d11: self.radio_d3d11.text(),
-            self.radio_d3d12: self.radio_d3d12.text()
+            self.radio_d3d12: self.radio_d3d12.text(),
+            self.radio_vulkan: self.radio_vulkan.text()
         }
 
         for key, value in available_api.items():
@@ -212,4 +206,23 @@ class PageInstallation(QWidget):
             return
 
         self.is_api_dx8()
+        self.is_api_vulkan()
         self.start_installation()
+
+    @Slot(int)
+    def update_progress(self, value: int) -> None:
+        self.progress_bar.setValue(value)
+
+    @Slot(bool)
+    def on_sucess(self, value: bool) -> None:
+        self.btn_install.setEnabled(value)
+        if value:
+            self.progress_bar.setFormat("Installation finished!")
+            self.install_finished.emit(value)
+
+    @Slot(bool)
+    def on_error(self, value: bool) -> None:
+        self.btn_install.setEnabled(True)
+        if not value:
+            self.progress_bar.setFormat("Error while installing")
+            self.install_finished.emit(value)

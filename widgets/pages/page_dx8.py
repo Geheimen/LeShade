@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
 )
-
 from PySide6.QtCore import Qt
 
 

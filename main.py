@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import shutil
 import sys
 import os
@@ -23,6 +22,7 @@ from widgets.pages.page_download import PageDownload
 from widgets.pages.page_installation import PageInstallation
 from widgets.pages.page_clone import PageClone
 from widgets.pages.page_dx8 import PageDX8
+from widgets.pages.page_vulkan import PageVulkan
 from widgets.pages.page_uninstall import PageUninstall
 from widgets.widget_bottom_buttons import WidgetBottomButtons
 
@@ -87,6 +87,7 @@ class MainWindow(QMainWindow):
         self.page_installation: PageInstallation = PageInstallation()
         self.page_clone: PageClone = PageClone(self.is_addon)
         self.page_dx8: PageDX8 = PageDX8()
+        self.page_vulkan: PageVulkan = PageVulkan()
 
         self.pages: list[QWidget] = [self.page_start,
                                      self.page_download, self.page_installation, self.page_clone]
@@ -97,6 +98,12 @@ class MainWindow(QMainWindow):
         self.install_finished: bool = False
         self.clone_finished: bool = False
         self.is_dx8: bool = False
+        self.is_vulkan: bool = False
+
+        # prefix directories signals
+        self.reshade_prx_dir: str = ""
+        self.system32_prx_dir: str = ""
+        self.vulkanrt_prx_dir: str = ""
 
         # tracks uninstall page
         self.is_uninstall: bool = False
@@ -118,8 +125,11 @@ class MainWindow(QMainWindow):
         self.page_installation.current_executable_path.connect(
             self.get_game_executable_path)
         self.page_installation.is_dx8.connect(self.get_is_dx8)
+        self.page_installation.is_vulkan.connect(self.get_is_vulkan)
         self.page_installation.already_have_hlsl_compiler.connect(
             self.get_hlsl_compiler)
+        self.page_installation.forward_vulkan_paths.connect(
+            self.get_vulkan_paths)
         self.page_clone.clone_finished.connect(self.on_clone_finished)
 
         # Clone work around, I get the game_dir and pass as param here, executing the on_clone that has game_dir as a param sequencially.
@@ -176,22 +186,32 @@ class MainWindow(QMainWindow):
                     self.enable_next_button()
 
                     # Add game to the uninstall list widget
-                    add_game(self.game_directory,
-                             self.game_exe_path, self.have_hlsl)
+                    add_game(
+                        self.game_directory,
+                        self.game_exe_path,
+                        self.have_hlsl,
+                        self.is_vulkan,
+                        self.reshade_prx_dir,
+                        self.system32_prx_dir,
+                        self.vulkanrt_prx_dir
+                    )
 
                     if self.is_dx8:
-                        self.manage_dx8_page(True)
-                    else:
-                        self.manage_dx8_page(False)
+                        self.manage_extra_page(True, self.page_dx8)
+
+                    if self.is_vulkan:
+                        self.manage_extra_page(True, self.page_vulkan)
+
             case Pages.WRAPPER:
                 self.enable_next_button()
             case _:
                 raise ValueError(
                     "The page that your trying to access does not exist")
 
-    def manage_dx8_page(self, append:  bool) -> None:
+    def manage_extra_page(self, append: bool, page: QWidget) -> None:
         if append:
-            self.pages.append(self.page_dx8)
+            if page not in self.pages:
+                self.pages.append(page)
             return
 
         if not append and len(self.pages) == 5:
@@ -210,7 +230,14 @@ class MainWindow(QMainWindow):
             return
 
     def update_next_button(self) -> None:
-        if self.pages_index == Pages.CLONE and not self.is_dx8 or self.pages_index == Pages.WRAPPER:
+        # See if needs extra page on Clone widget
+        clone_is_end = (self.pages_index ==
+                        Pages.CLONE) and not self.is_dx8 and not self.is_vulkan
+
+        # See if we are oany extra page
+        wrapper_is_end = (self.pages_index == Pages.WRAPPER)
+
+        if clone_is_end or wrapper_is_end:
             self.action_buttons.btn_next.setText("Close")
             self.action_buttons.btn_next.clicked.disconnect()
             self.action_buttons.btn_next.clicked.connect(self.close)
@@ -305,6 +332,16 @@ class MainWindow(QMainWindow):
             return
 
     @Slot(bool)
+    def get_is_vulkan(self, value: bool) -> None:
+        if value:
+            self.is_vulkan = value
+            return
+
+        if not value:
+            self.is_vulkan = value
+            return
+
+    @Slot(bool)
     def get_is_addon(self, value: bool) -> None:
         if value:
             self.is_addon = value
@@ -313,10 +350,20 @@ class MainWindow(QMainWindow):
 
         self.page_clone.set_is_addon(self.is_addon)
 
+    @Slot(str, str, str)
+    def get_vulkan_paths(self, reshade: str, sys32: str, vulkanrt: str) -> None:
+        self.reshade_prx_dir = reshade
+        self.system32_prx_dir = sys32
+        self.vulkanrt_prx_dir = vulkanrt
+
     @Slot(str)
     def get_game_directory(self, value: str) -> None:
         self.game_directory = value
-        self.page_dx8 = PageDX8(format_game_name(self.game_exe_path))
+
+        game_name: str = format_game_name(self.game_exe_path)
+
+        self.page_dx8 = PageDX8(game_name)
+        self.page_vulkan = PageVulkan(game_name)
 
     @Slot(str)
     def get_game_executable_path(self, value: str) -> None:
@@ -336,7 +383,6 @@ def main() -> None:
 
     app.setOrganizationName("Ishidawg")
     app.setApplicationName("LeShade")
-    # app.setDesktopFileName("io.github.ishidawg.LeShade")
 
     local_dir: str = get_localdir()
     icon_path: str = os.path.join(local_dir, "assets", "logo.png")

@@ -1,3 +1,6 @@
+from PySide6.QtCore import Qt, Signal, SignalInstance, Slot, QThread
+from scripts_core.script_download_re import DownloadWorker
+from utils.utils import get_reshade_tags
 from PySide6.QtWidgets import (
     QComboBox,
     QWidget,
@@ -7,10 +10,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QProgressBar
 )
-
-from PySide6.QtCore import Qt, Signal, Slot, QThread
-from scripts_core.script_download_re import DownloadWorker
-from utils.utils import get_reshade_tags
 
 
 class PageDownload(QWidget):
@@ -99,31 +98,11 @@ class PageDownload(QWidget):
     def start_animation(self) -> None:
         self.progress_bar.setRange(0, 0)
 
-    @Slot(str)
-    def update_text(self, value: str) -> None:
-        self.progress_bar.setFormat(value)
-
-    @Slot(bool)
-    def on_success(self, value: bool) -> None:
-        self.btn_download.setEnabled(True)
-
-        if self.reshade_version.currentText() == "addon":
-            self.is_addon.emit(True)
+    def get_reshade_version(self, reshade_selector: QComboBox, addon_signal: SignalInstance) -> None:
+        if reshade_selector.currentText() == "addon":
+            addon_signal.emit(True)
         else:
-            self.is_addon.emit(False)
-
-        if value:
-            self.progress_bar.setRange(0, 100)
-            self.progress_bar.setValue(100)
-            self.download_finished.emit(value)
-
-    @Slot(bool)
-    def on_error(self, value: bool) -> None:
-        self.btn_download.setEnabled(True)
-        if not value:
-            self.progress_bar.setRange(0, 100)
-            self.progress_bar.setValue(0)
-            self.download_finished.emit(value)
+            addon_signal.emit(False)
 
     def click_download(self) -> None:
         self.start_animation()
@@ -153,3 +132,26 @@ class PageDownload(QWidget):
         for tag in tags:
             # Make sure the "More" entry is always the last one
             self.reshade_releases.insert(len(self.reshade_releases) - 1, tag)
+
+    @Slot(str)
+    def update_text(self, value: str) -> None:
+        self.progress_bar.setFormat(value)
+
+    @Slot(bool)
+    def on_success(self, value: bool) -> None:
+        self.btn_download.setEnabled(True)
+
+        self.get_reshade_version(self.reshade_version, self.is_addon)
+
+        if value:
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(100)
+            self.download_finished.emit(value)
+
+    @Slot(bool)
+    def on_error(self, value: bool) -> None:
+        self.btn_download.setEnabled(True)
+        if not value:
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(0)
+            self.download_finished.emit(value)
