@@ -1,4 +1,3 @@
-from os.path import isfile
 from scripts_core.script_manager import read_boolean_flags, update_manager, read_manager_content
 from PySide6.QtWidgets import (
     QLabel,
@@ -13,7 +12,7 @@ import shutil
 import glob
 import os
 
-from scripts_core.script_vulkan import VULKANRT_PATH, InstallVukan
+from scripts_core.script_vulkan import InstallVulkan
 
 
 class PageUninstall(QWidget):
@@ -103,11 +102,11 @@ class PageUninstall(QWidget):
 
                 if is_vulkan:
                     reshade_dir: str = read_manager_content(
-                        "reshade_pfx_dir")[current_row]
+                        "reshade_prx_dir")[current_row]
                     system32_dir: str = read_manager_content(
-                        "system32_pfx_dir")[current_row]
+                        "system32_prx_dir")[current_row]
                     vulkanrt_dir: str = read_manager_content(
-                        "vulkanrt_pfx_dir")[current_row]
+                        "vulkanrt_prx_dir")[current_row]
 
                     if reshade_dir and os.path.exists(reshade_dir):
                         shutil.rmtree(reshade_dir)
@@ -133,7 +132,7 @@ class PageUninstall(QWidget):
                             if os.path.isfile(icu_file_path):
                                 os.remove(icu_file_path)
 
-                    InstallVukan(game_path, True)
+                    InstallVulkan(game_path, True)
 
             # Remove game from list and reset
             widget_list.takeItem(current_row)

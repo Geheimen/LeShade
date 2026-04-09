@@ -18,7 +18,7 @@ ADD_REG_PATH: str = os.path.join(EXTRACT_PATH, "leshade.reg")
 REMOVE_REG_PATH: str = os.path.join(EXTRACT_PATH, "remove.reg")
 
 
-class InstallVukan():
+class InstallVulkan():
     def __init__(self, game_dir: str, remove: bool = False) -> None:
         super().__init__()
 
@@ -49,8 +49,9 @@ class InstallVukan():
 
         if remove:
             os.makedirs(EXTRACT_PATH, exist_ok=True)
-            self.create_remove_leshade_reg(REMOVE_REG_PATH, True)
-            self.add_remove_registry_keys(self.app_id, REMOVE_REG_PATH, True)
+            self.create_remove_leshade_reg(REMOVE_REG_PATH, remove=True)
+            self.add_remove_registry_keys(
+                self.app_id, REMOVE_REG_PATH, remove=True)
             return
 
     def run(self) -> None:

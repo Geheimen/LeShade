@@ -7,7 +7,7 @@ from scripts_core.script_download_dll import (
     download_d3d8to9,
     download_hlsl_compiler
 )
-from scripts_core.script_vulkan import InstallVukan
+from scripts_core.script_vulkan import InstallVulkan
 from utils.utils import EXTRACT_PATH
 
 import textwrap
@@ -80,7 +80,7 @@ class InstallationWorker(QObject):
 
     def ready_reshade_dll(self) -> None:
         if self.game_api == "Vulkan":
-            vulkan_install: InstallVukan = InstallVukan(self.game_path)
+            vulkan_install: InstallVulkan = InstallVulkan(self.game_path)
 
             self.vulkan_paths.emit(
                 vulkan_install.reshade_prefix,
