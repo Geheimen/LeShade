@@ -58,12 +58,8 @@ class InstallationWorker(QObject):
         self.hlsl_compiler = download_hlsl_compiler(
             self.game_path_parent, self.game_arch)
 
-        # means that game folder already had the d3dcompiler_47.dll
-        # self.have_hlsl_compiler.emit(self.have_hlsl_compiler) This throws and error like: _pythonToCppCopy: Cannot copy-convert 0x7ff9643809d0 (PySide6.QtCore.SignalInstance) to C++.
-        if self.hlsl_compiler:
-            self.have_hlsl_compiler.emit(True)
-        else:
-            self.have_hlsl_compiler.emit(False)
+        # means that game folder already had the d3dcompiler_47.dll - emit True or False
+        self.have_hlsl_compiler.emit(self.hlsl_compiler)
 
         if self.game_api == "D3D 8":
             self.install_progress.emit(90)
@@ -81,10 +77,8 @@ class InstallationWorker(QObject):
             self.install_finished.emit(False)
 
     def ready_reshade_dll(self) -> None:
-        if self.game_api == "Vulkan":
-            InstallVukan(self.game_path)
-        else:
-            self.prepare_dll()
+        InstallVukan(
+            self.game_path) if self.game_api == "Vulkan" else self.prepare_dll()
 
         self.create_reshade_directories()
         self.create_reshade_ini()
@@ -154,7 +148,7 @@ class InstallationWorker(QObject):
             case "D3D 12":
                 reshade_dll_renamed = "dxgi.dll"
             case _:
-                raise ValueError(f"YET an nsupported API!")
+                raise ValueError(f"YET an unsupported API!")
 
         reshade_dll_renamed_destination: str = os.path.join(
             self.game_path_parent, reshade_dll_renamed)

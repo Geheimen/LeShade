@@ -1,14 +1,14 @@
-import os
+from PySide6.QtCore import QStandardPaths
+from zipfile import BadZipfile, ZipFile
 from pathlib import Path
-import re
+from typing import Any
 import urllib.request
 import urllib.error
-import ssl
 import certifi
 import json
-from typing import Any
-
-from PySide6.QtCore import QStandardPaths
+import ssl
+import re
+import os
 
 CACHE_PATH: str = QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.CacheLocation)
@@ -17,10 +17,22 @@ TAGS_URL: str = "https://github.com/crosire/reshade/tags"
 RENODX_SNAPSHOT_URL: str = "https://api.github.com/repos/clshortfuse/renodx/releases/tags/snapshot"
 
 
+def make_extract_dir() -> None:
+    os.makedirs(EXTRACT_PATH, exist_ok=True)
+
+
 def format_game_name(game_dir: str) -> str:
     game_base_name = os.path.basename(game_dir)
     game_name = os.path.splitext(game_base_name)[0]
     return game_name
+
+
+def unzip_file(src_file: str, destination_path: str) -> None:
+    try:
+        with ZipFile(src_file, "r") as zip_file:
+            zip_file.extractall(destination_path)
+    except Exception as e:
+        raise BadZipfile(f"Failed to unzip: {e}")
 
 
 def download(url: str, game_path: str = "", game_arch: str = "", file_name: str = "") -> None | bool:
@@ -30,10 +42,7 @@ def download(url: str, game_path: str = "", game_arch: str = "", file_name: str 
         print(
             f"Game folder already have the {file_name}. For safety reasons it will not be replaced.")
 
-        if file_name == "d3dcompiler_47.dll":
-            return True
-        else:
-            return
+        return True if file_name == "d3dcompiler_47.dll" else None
 
     if game_arch:
         arch: str = "win64" if game_arch == "64-bit" else "win32"

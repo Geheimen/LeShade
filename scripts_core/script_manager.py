@@ -1,11 +1,8 @@
+from PySide6.QtCore import QStandardPaths
+from utils.utils import format_game_name
+from pathlib import Path
 import json
 import os
-
-from pathlib import Path
-
-from PySide6.QtCore import QStandardPaths
-
-from utils.utils import format_game_name
 
 CONFIG_PATH = QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.ConfigLocation)

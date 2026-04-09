@@ -1,15 +1,12 @@
-import os
-import shutil
-import zipfile
-import asyncio
-
-from pathlib import Path
+from utils.utils import generic_download, unzip_file
 from PySide6.QtCore import (
     QObject,
     Signal
 )
-
-from utils.utils import generic_download
+from pathlib import Path
+import asyncio
+import shutil
+import os
 
 REPO_SHADERS = {
     "Crosire slim": {
@@ -91,12 +88,7 @@ class ShadersWorker(QObject):
     async def unzip_shader(self, shader_temp_dir: str, repo_name: str, zipped_dir: str) -> None:
         extracted_shader_dir: str = os.path.join(shader_temp_dir, repo_name)
         os.makedirs(extracted_shader_dir, exist_ok=True)
-
-        try:
-            with zipfile.ZipFile(zipped_dir, 'r') as zip_ref:
-                zip_ref.extractall(extracted_shader_dir)
-        except Exception as e:
-            raise IOError(f"Failed to unzip: {e}") from e
+        unzip_file(zipped_dir, extracted_shader_dir)
 
     async def download_shaders(self, shader_url: str, zipped_shader_dir: str) -> None:
         try:
