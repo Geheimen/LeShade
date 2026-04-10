@@ -66,8 +66,6 @@ class PageInstallation(QWidget):
         self.radio_vulkan = QRadioButton("Vulkan")
         self.radio_d3d12.setChecked(True)
 
-        self.vulkan_warning = QLabel("(Steam only)")
-
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -91,8 +89,7 @@ class PageInstallation(QWidget):
         layout_api.addWidget(self.radio_d3d10, 1, 0)
         layout_api.addWidget(self.radio_d3d11, 1, 1)
         layout_api.addWidget(self.radio_d3d12, 1, 2)
-        layout_api.addWidget(self.radio_vulkan, 2, 0)
-        layout_api.addWidget(self.vulkan_warning, 2, 1)
+        layout_api.addWidget(self.radio_vulkan, 2, 1)
         layout.addLayout(layout_api)
         layout.addSpacing(10)
 

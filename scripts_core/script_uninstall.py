@@ -43,10 +43,11 @@ class UninstallWorker(QObject):
                 if os.path.exists(shaders_dir):
                     shutil.rmtree(shaders_dir)
 
+                file_path: str = ""
                 for file in remove_files_complete:
-                    if file in os.listdir(self.game_path):
-                        if os.path.exists(file):
-                            os.remove(os.path.join(self.game_path, file))
+                    file_path = os.path.join(self.game_path, file)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
 
                 for pattern in remove_files_pattern:
                     file_match: str = os.path.join(self.game_path, pattern)
