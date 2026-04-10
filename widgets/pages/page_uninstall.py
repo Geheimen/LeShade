@@ -1,18 +1,15 @@
-from scripts_core.script_manager import read_boolean_flags, update_manager, read_manager_content
+from scripts_core.script_manager import update_manager, read_manager_content
+from scripts_core.script_uninstall import UninstallWorker
 from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
     QVBoxLayout,
-    QWidget
+    QWidget,
+    QProgressBar
 )
-from PySide6.QtCore import Qt
-import shutil
-import glob
-import os
-
-from scripts_core.script_vulkan import InstallVulkan
+from PySide6.QtCore import QThread, Qt, Slot
 
 
 class PageUninstall(QWidget):
@@ -36,19 +33,21 @@ class PageUninstall(QWidget):
         self.game_list.setUpdatesEnabled(True)
         self.add_items(self.games, self.game_list)
 
-        self.btn_uninstall = QPushButton("Uninstall")
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
 
+        self.btn_uninstall = QPushButton("Uninstall")
         self.btn_uninstall.clicked.connect(self.on_uninstall_clicked)
 
         # add widgets
         layout.addWidget(label_description)
         layout.addWidget(self.game_list)
+        layout.addWidget(self.progress_bar)
         layout.addWidget(self.btn_uninstall)
         self.setLayout(layout)
-
-    def on_uninstall_clicked(self) -> None:
-        self.uninstall_reshade(
-            self.game_list, self.games_dir)
 
     def add_items(self, games: list[str], widget_list: QListWidget):
         index: int = 1
@@ -60,88 +59,65 @@ class PageUninstall(QWidget):
 
             index = index + 1
 
-    def uninstall_reshade(self, widget_list: QListWidget, dir_list: list[str]):
-        try:
-            current_row: int = widget_list.currentRow()
-            game_path: str = dir_list[current_row]
+    def on_uninstall_clicked(self) -> None:
+        current_row: int = self.game_list.currentRow()
 
-            shaders_dir: str = os.path.join(game_path, "reshade-shaders")
+        # Try to prevent crashes IF the user click on uninstall without selecting anything. But I doubt
+        if current_row < 0:
+            return
 
-            # I dont remember what I did to this string be a bool
-            have_hlsl_compiler: str = read_boolean_flags(
-                current_row, "hlsl_compiler")
+        self.start_uninstalling(current_row)
 
-            is_vulkan: str = read_boolean_flags(current_row, "vulkan")
+    def start_uninstalling(self, current_row: int) -> None:
+        self.btn_uninstall.setEnabled(False)
 
-            remove_files_complete: list[str] = [
-                "opengl32.dll", "d3d8.dll", "d3d9.dll", "d3d10.dll", "d3d11.dll", "dxgi.dll"]
-            if not have_hlsl_compiler:
-                remove_files_complete.append("d3dcompiler_47.dll")
+        self.progress_bar.setRange(0, 0)
+        self.progress_bar.setFormat("Uninstalling...")
 
-            remove_files_pattern: list[str] = [
-                "ReShade*.*",
-                "reshade*.*",
-                "renodx*.*"
-            ]
+        game_path: str = self.games_dir[current_row]
 
-            if os.path.exists(game_path):
-                if os.path.exists(shaders_dir):
-                    shutil.rmtree(shaders_dir)
+        self.uninstall_thread: QThread = QThread()
+        self.uninstall_worker: UninstallWorker = UninstallWorker(
+            current_row, game_path)
 
-                for file in remove_files_complete:
-                    if file in os.listdir(game_path):
-                        os.remove(os.path.join(game_path, file))
+        self.uninstall_worker.moveToThread(self.uninstall_thread)
 
-                for pattern in remove_files_pattern:
-                    file_match: str = os.path.join(game_path, pattern)
-                    glob_result: list[str] = glob.glob(file_match)
+        # started is a default signal, not a custom by me
+        self.uninstall_thread.started.connect(self.uninstall_worker.run)
 
-                    for file_found in glob_result:
-                        if os.path.exists(file_found):
-                            os.remove(file_found)
+        self.uninstall_worker.finished.connect(self.on_uninstall_finished)
+        self.uninstall_worker.error.connect(self.on_uninstall_error)
 
-                if is_vulkan:
-                    reshade_dir: str = read_manager_content(
-                        "reshade_prx_dir")[current_row]
-                    system32_dir: str = read_manager_content(
-                        "system32_prx_dir")[current_row]
-                    vulkanrt_dir: str = read_manager_content(
-                        "vulkanrt_prx_dir")[current_row]
+        self.uninstall_worker.finished.connect(self.uninstall_thread.quit)
+        self.uninstall_worker.finished.connect(
+            self.uninstall_worker.deleteLater)
+        self.uninstall_thread.finished.connect(
+            self.uninstall_thread.deleteLater)
 
-                    if reshade_dir and os.path.exists(reshade_dir):
-                        shutil.rmtree(reshade_dir)
+        self.uninstall_thread.start()
 
-                    if vulkanrt_dir and os.path.exists(vulkanrt_dir):
-                        shutil.rmtree(vulkanrt_dir)
+    @Slot(str)
+    def on_uninstall_error(self, message: str) -> None:
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFormat(f"Error: {message}")
+        self.progress_bar.setEnabled(True)
 
-                    if system32_dir and os.path.exists(system32_dir):
-                        icu_file_path: str = ""
+    @Slot(bool)
+    def on_uninstall_finished(self, success: bool) -> None:
+        if success:
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(100)
+            self.progress_bar.setFormat("Uninstalled!")
 
-                        icu_files: list[str] = ["derb.exe", "genbrk.exe", "genccode.exe", "genu.exe",
-                                                "gencmn.exe", "gencnval.exe", "gendict.exe", "gennorm2.exe",
-                                                "genrb.exe", "gensprep.exe", "icudt.dll", "icudt78.dll",
-                                                "icuexportdata.exe", "icuin.dll", "icuin78.dll", "icuinfo.exe",
-                                                "icuio.dll", "icuio78.dll", "icupkg.exe", "icutest.exe",
-                                                "icutest78.exe", "icutu.dll", "icutu78.dll", "icuuc.dll",
-                                                "icuuc78.dll", "makeconv.exe", "pkgdata.exe", "testplug.dll",
-                                                "uconv.exe"]
+            self.btn_uninstall.setEnabled(True)
 
-                        for file in icu_files:
-                            icu_file_path = os.path.join(system32_dir, file)
+            current_row: int = self.game_list.currentRow()
 
-                            if os.path.isfile(icu_file_path):
-                                os.remove(icu_file_path)
-
-                    InstallVulkan(game_path, True)
-
-            # Remove game from list and reset
-            widget_list.takeItem(current_row)
-            widget_list.updateEditorData()
-            widget_list.reset()
-
-            # update the values so we can get the correct game_path
+            self.game_list.takeItem(current_row)
+            self.game_list.updateEditorData()
+            self.game_list.reset()
             update_manager(current_row)
+
             self.games = read_manager_content("game")
             self.games_dir = read_manager_content("dir")
-        except IndexError as e:
-            print(e)
