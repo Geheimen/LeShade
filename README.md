@@ -15,19 +15,13 @@
 *This project started as a university project, and I already mentioned that in the [old readme file](https://github.com/Ishidawg/LeShade/blob/main/OLD-README.md). The project grew and became a passion project, and now I think it's good to have a new readme file.*
 
 LeShade is a reshade manager for linux. Think of a mod manager, but specifically for reshade. It includes features like:
-- Common APIs support *(DX9, DX10, DX11, DX12, OpenGL)*
+- Common APIs support *(DX9, DX10, DX11, DX12, OpenGL, Vulkan)*
 - Direct3D 8.x support
 - ReShade with **addon** and **non-addon** versions
 - ReShade with release versions support
 - Uninstalling ReShade per game basis from previous installations
 - Many shaders repositories
 - RenoDX support _(snapshot releases)_
-
-### Why is Vulkan not in the Common APIs support?
-I'm working on a implementation to run with Steam Games. For Heroic Games Launcher, Faugus and Lutris, check the item below _(Is it possible to use ReShade on Vulkan Games?)_. You can get more information about it here: [issue](https://github.com/Ishidawg/LeShade/issues/16).
-
-### Is it possible to use ReShade on _"Vulkan games"_?
-Ya, I managed to boot _Star Wars Dark Forces Remastered_ with ReShade. I'm working on a implementation to install ReShade on Vulkan games that uses Steam. You can check this video that I made about this matter: [ReShade on Games that uses Vulkan](https://www.youtube.com/watch?v=bkvsivxoZGo)
 
 ## Usage
 The program itself is very intuitive, so if you already used a mod manager or even the ReShade installer *"à la"* wizard you will likely not have any problems. Even though I have made a [video guide](https://youtu.be/ge8558huYfE). You can download the AppImage or Flatpak version on the [release page](https://github.com/Ishidawg/LeShade/releases).
@@ -83,6 +77,17 @@ If you are installing ReShade on a game that uses Direct3D 8.0, you **must** add
 <div align="center">
 	<h3>Heroic launch options</h3>
     <img alt="Heroic games launcher" src="https://i.imgur.com/Ymj68nY.png" width="800" />
+</div>
+
+**Vulkan instructions:**
+If you are installing ReShade on a game that uses Vulkan, you **must** add the environment variables on your game launcher *(Steam, Heroic Games Launcher, Lutris, Faugus Launcher)*. Here are two examples of how you can set those on Steam and Heroic.
+<div align="center">
+		<h3>Steam launch options</h3>
+    <img alt="Steam launch options" src="https://i.imgur.com/MZE0a6k.png" width="800" />
+</div>
+<div align="center">
+	<h3>Heroic launch options</h3>
+    <img alt="Heroic games launcher" src="https://i.imgur.com/lJnpCPo.png" width="800" />
 </div>
 
 ## Development
