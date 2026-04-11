@@ -27,7 +27,7 @@ LeShade is a reshade manager for linux. Think of a mod manager, but specifically
 The project depends on [protontricks](https://protontricks.com/) so it can run the VulkanRT installer on the game prefix, please install on your system.
 
 ## Usage
-The program itself is very intuitive, so if you already used a mod manager or even the ReShade installer *"à la"* wizard you will likely not have any problems. Even though I have made a [video guide](https://youtu.be/ge8558huYfE). You can download the AppImage or Flatpak version on the [release page](https://github.com/Ishidawg/LeShade/releases).
+The program itself is very intuitive, so if you already used a mod manager or even the ReShade installer *"à la"* wizard you will likely not have any problems. Even though I have made a [video guide](https://www.youtube.com/watch?v=g4NVwnM8mL0). You can download the AppImage or Flatpak version on the [release page](https://github.com/Ishidawg/LeShade/releases).
 
 **AppImage Instructions:**
 1. Select `LeShade-x86_64.AppImage` that you have downloaded
