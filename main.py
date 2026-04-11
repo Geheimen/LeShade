@@ -29,7 +29,7 @@ from widgets.widget_bottom_buttons import WidgetBottomButtons
 from utils.utils import EXTRACT_PATH, format_game_name
 from scripts_core.script_manager import create_manager, add_game
 
-app_version: str = "2.4.3"
+app_version: str = "2.4.4"
 build_type: str = "Release"
 
 
@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        WINDOW_SIZE: list[int] = [600, 500]
+        WINDOW_SIZE: list[int] = [620, 500]
 
         window_title: str = f"LeShade {app_version}"
 
