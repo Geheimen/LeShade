@@ -1,4 +1,4 @@
-from utils.utils import EXTRACT_PATH, download, get_clean_env, get_game_directory_name, get_steam_appid, get_steamapps_directory, unzip_file
+from utils.utils import EXTRACT_PATH, download, get_clean_env, get_game_directory_name, get_steam_appid, get_gamebase_directory, unzip_file
 from pathlib import Path
 import subprocess
 import textwrap
@@ -19,21 +19,31 @@ REMOVE_REG_PATH: str = os.path.join(EXTRACT_PATH, "remove.reg")
 
 
 class InstallVulkan():
-    def __init__(self, game_dir: str, remove: bool = False) -> None:
+    def __init__(self, game_dir: str, is_steam: bool, remove: bool = False) -> None:
         super().__init__()
+        self.is_steam: bool = is_steam
 
         self.executable_path: Path = Path(game_dir)
-        self.game_name: str = get_game_directory_name(self.executable_path)
-        self.steamapps_dir: str = get_steamapps_directory(self.executable_path)
-        self.app_id: str = get_steam_appid(self.steamapps_dir, self.game_name)
+        self.gamebase_dir: str = get_gamebase_directory(
+            self.executable_path, self.is_steam)
+        self.app_id: str = ""
+        self.drive_c_path: str = ""
 
-        self.drive_c_path: str = os.path.join(
-            self.steamapps_dir,
-            "compatdata",
-            self.app_id,
-            "pfx",
-            "drive_c"
-        )
+        if is_steam:
+            self.game_name: str = get_game_directory_name(self.executable_path)
+            self.app_id = get_steam_appid(
+                self.gamebase_dir, self.game_name)
+
+            self.drive_c_path = os.path.join(
+                self.gamebase_dir,
+                "compatdata",
+                self.app_id,
+                "pfx",
+                "drive_c"
+            )
+        else:
+            self.drive_c_path = self.gamebase_dir
+            self.app_id = ""
 
         self.system32_prefix: str = os.path.join(
             self.drive_c_path,
@@ -56,9 +66,14 @@ class InstallVulkan():
 
     def run(self) -> None:
         self.run_ICU()
-        self.run_vulkanRT(self.app_id)
-        self.run_reshade_actions(
-            self.reshade_prefix, self.executable_path, self.app_id)
+
+        if self.is_steam:
+            self.run_vulkanRT(self.app_id)
+            self.run_reshade_actions(
+                self.reshade_prefix, self.executable_path, self.app_id)
+        else:
+            self.run_vulkanRT()
+            self.run_reshade_actions(self.reshade_prefix, self.executable_path)
 
     def download_ICU(self) -> None:
         download(url=ICU_URL, file_name=ICU_PATH)
@@ -81,18 +96,24 @@ class InstallVulkan():
     def download_vulkanRT(self) -> None:
         download(url=VULKANRT_URL, file_name=VULKANRT_PATH)
 
-    def install_vulkanRT(self, app_id: str) -> None:
-        wine_wrap_command: str = f"wine '{VULKANRT_PATH}' /S"
+    def install_vulkanRT(self, app_id: str = "") -> None:
+        custom_env: dict[str, str] = get_clean_env()
+        full_command: list[str] = []
 
-        full_command: list[str] = [
-            "protontricks", "-c", wine_wrap_command, app_id]
+        if self.is_steam:
+            wine_wrap_command: str = f"wine '{VULKANRT_PATH}' /S"
+            full_command = ["protontricks", "-c", wine_wrap_command, app_id]
+        else:
+            custom_env["WINEPREFIX"] = os.path.dirname(self.drive_c_path)
+            custom_env["WINEDLLOVERRIDES"] = "mscoree,mshtml="
+            full_command = ["wine", VULKANRT_PATH, "/S"]
 
         try:
             subprocess.run(full_command,
                            check=True,
                            capture_output=True,
                            text=True,
-                           env=get_clean_env()
+                           env=custom_env
                            )
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to install VulkanRT: {e.stderr}")
@@ -100,7 +121,7 @@ class InstallVulkan():
             raise Exception(
                 f"You need to install protontricks or the command was not found.")
 
-    def run_vulkanRT(self, steam_id: str) -> None:
+    def run_vulkanRT(self, steam_id: str = "") -> None:
         self.download_vulkanRT()
         self.install_vulkanRT(steam_id)
 
@@ -160,16 +181,37 @@ class InstallVulkan():
                 file.write(registry_add_content)
 
     def add_remove_registry_keys(self, app_id: str, registry_path: str, remove: bool = False) -> None:
+        custom_env: dict[str, str] = get_clean_env()
+
+        full_command: list[str] = []
+        sync_command: list[str] = []
+
         reg_command: str = f"regedit /S {registry_path}"
 
-        full_command: list[str] = ["protontricks", "-c", reg_command, app_id]
+        # For some reason, -c flag on protontricks saves me from spliting commands like on non-steam games.
+        if self.is_steam:
+            full_command = ["protontricks", "-c", reg_command, app_id]
+            sync_command = ["protontricks", "-c", "wineserver -w", app_id]
+        else:
+            custom_env["WINEPREFIX"] = os.path.dirname(self.drive_c_path)
+            custom_env["WINEDLLOVERRIDES"] = "mscoree,mshtml="
+
+            full_command = ["wine", "regedit", "/S", registry_path]
+            sync_command = ["wineserver", "-w"]
 
         try:
             subprocess.run(full_command,
                            check=True,
                            capture_output=True,
                            text=True,
-                           env=get_clean_env()
+                           env=custom_env
+                           )
+
+            subprocess.run(sync_command,
+                           check=True,
+                           capture_output=True,
+                           text=True,
+                           env=custom_env
                            )
         except subprocess.CalledProcessError as e:
             if remove:
@@ -177,7 +219,7 @@ class InstallVulkan():
             else:
                 raise Exception(f"Failed to write on registry: {e.stderr}")
 
-    def run_reshade_actions(self, reshade_prefix: str, game_executable: Path, app_id: str) -> None:
+    def run_reshade_actions(self, reshade_prefix: str, game_executable: Path, app_id: str = "") -> None:
         self.move_reshade_files(reshade_prefix)
         self.create_reshade_apps(reshade_prefix, game_executable)
         self.create_remove_leshade_reg(ADD_REG_PATH)

@@ -30,7 +30,7 @@ class InstallationWorker(QObject):
 
     vulkan_paths: Signal = Signal(str, str, str)
 
-    def __init__(self, game_path: str, game_api: str):
+    def __init__(self, game_path: str, game_api: str, is_steam: bool):
         super().__init__()
 
         self.game_path: str = game_path
@@ -48,13 +48,14 @@ class InstallationWorker(QObject):
             self.game_path_parent, "ReShade.ini")
 
         self.hlsl_compiler: bool | None = None
+        self.is_steam: bool = is_steam
 
     def run(self) -> None:
         self.install_progress.emit(0)
         self.game_arch = self.get_executable_architecture(
             Path(self.game_path))
         self.install_progress.emit(40)
-        self.ready_reshade_dll()
+        self.ready_reshade_dll(self.is_steam)
         self.install_progress.emit(60)
 
         self.hlsl_compiler = download_hlsl_compiler(
@@ -78,9 +79,10 @@ class InstallationWorker(QObject):
             self.install_progress.emit(0)
             self.install_finished.emit(False)
 
-    def ready_reshade_dll(self) -> None:
+    def ready_reshade_dll(self, is_steam: bool) -> None:
         if self.game_api == "Vulkan":
-            vulkan_install: InstallVulkan = InstallVulkan(self.game_path)
+            vulkan_install: InstallVulkan = InstallVulkan(
+                self.game_path, is_steam)
 
             self.vulkan_paths.emit(
                 vulkan_install.reshade_prefix,

@@ -35,18 +35,24 @@ def get_game_directory_name(executable_path: Path) -> str:
     return directory_name
 
 
-def get_steamapps_directory(executable_path: Path) -> str:
-    steam_apps: str = ""
+# Can be steamapps or drive_c (for non-steam games)
+def get_gamebase_directory(executable_path: Path, is_steam: bool) -> str:
+    game_base: str = ""
 
     for parent in executable_path.parents:
-        if parent.name == "steamapps":
-            steam_apps = str(parent)
-            break
+        if is_steam:
+            if parent.name == "steamapps":
+                game_base = str(parent)
+                break
+        else:
+            if parent.name == "drive_c":
+                game_base = str(parent)
+                break
 
-    if not steam_apps:
+    if not game_base:
         raise ValueError("Error: steamapps dir was not found")
 
-    return steam_apps
+    return game_base
 
 
 def unzip_file(src_file: str, destination_path: str) -> None:

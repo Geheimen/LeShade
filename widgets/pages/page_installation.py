@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QGridLayout,
     QLineEdit,
+    QMessageBox,
     QProgressBar,
     QRadioButton,
     QWidget,
@@ -34,6 +35,7 @@ class PageInstallation(QWidget):
 
         self.game_path: str = ""
         self.game_api: str = ""
+        self.is_steam: bool = True
 
         # create layout
         layout = QVBoxLayout()
@@ -102,6 +104,20 @@ class PageInstallation(QWidget):
 
         self.setLayout(layout)
 
+    def dialog_box(self) -> None:
+        dialog = QMessageBox()
+        dialog.setWindowTitle("Vulkan Installation")
+        dialog.setIcon(QMessageBox.Icon.Question)
+        dialog.setText("Is your game on Steam?")
+
+        dialog.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        button = dialog.exec()
+
+        if button == QMessageBox.StandardButton.No:
+            self.is_steam = False
+
     def on_browse_clicked(self) -> None:
         options = (
             QFileDialog.Option(0)
@@ -121,14 +137,18 @@ class PageInstallation(QWidget):
         self.progress_bar.reset()
 
     def start_installation(self) -> None:
+        if self.game_api == "Vulkan":
+            self.dialog_box()
+
         self.install_thread: QThread = QThread()
         self.install_worker: InstallationWorker = InstallationWorker(
-            self.game_path, self.game_api)
+            self.game_path, self.game_api, self.is_steam)
 
         self.install_worker.moveToThread(self.install_thread)
 
         # start and ath the end, finished, are built-in thread signals
-        self.install_thread.started.connect(self.install_worker.run)
+        self.install_thread.started.connect(
+            self.install_worker.run)
 
         # install_progress, install_finished, current_game_path and have_hlsl_compiler
         # are signals from script_installation.py

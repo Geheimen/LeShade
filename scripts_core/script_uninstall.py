@@ -89,7 +89,9 @@ class UninstallWorker(QObject):
                             if os.path.isfile(icu_file_path):
                                 os.remove(icu_file_path)
 
-                    InstallVulkan(self.game_path, True)
+                    is_steam: bool = "steamapps" in self.game_path
+
+                    InstallVulkan(self.game_path, is_steam, True)
 
             self.finished.emit(True)
         except Exception as e:
