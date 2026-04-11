@@ -90,6 +90,9 @@ If you are installing ReShade on a game that uses Vulkan, you **must** add the e
     <img alt="Heroic games launcher" src="https://i.imgur.com/lJnpCPo.png" width="800" />
 </div>
 
+## Compatibility
+I've made a [wiki page](https://github.com/Ishidawg/LeShade/wiki/Compatibility) and a [`COMPATIBILITY.md`](https://github.com/Ishidawg/LeShade/blob/compatibility/COMPATIBILITY.md) that includes tested games by users, so you can check if your game is there. Also you can contribute to it, just access and read it.
+
 ## Development
 LeShade is built with PySide6 with default Qt widgets, so you can expect a **seamless theme integration with your system**. Qt was my choice to build the GUI because I've seen other awesome applications that use it and I really like: *PCSX2, Duckstation and ShadPS4*. Also, LeShade was developed exclusively by human hands, without any sort of AI bullshit.
 I have tested each build *(AppImage and Flatpak)* on *Oracle Virtual* with those 3 distros: *Ubuntu 25.10, Ubuntu 24.04.3, Linux Mint 22.2*. Also, have tested on *CachyOS non-vm*. You can take a look into this [pull request](https://github.com/Ishidawg/LeShade/pull/9).
