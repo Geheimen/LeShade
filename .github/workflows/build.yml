@@ -20,7 +20,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libxcb-cursor0 libxcb-xinerama0 wget fuse
+        sudo apt-get install -y libxcb-cursor0 libxcb-xinerama0 libgtk-3-dev wget fuse
 
     - name: Install Dependencies
       run: |
@@ -34,8 +34,6 @@ jobs:
           --name "LeShade" \
           --add-data "assets:assets" \
           --icon "assets/logo.png" \
-          --collect-submodules "PySide6.QtDesigner" \
-          --hidden-import "PySide6.QtXml" \
           --collect-all "PySide6" \
           main.py
 
