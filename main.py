@@ -7,6 +7,9 @@ import os
 from enum import IntEnum
 from pathlib import Path
 
+if getattr(sys, 'frozen', False):
+    os.environ["QT_QPA_PLATFORMTHEME"] = "xdgdesktopportal"
+
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
