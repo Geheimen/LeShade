@@ -20,7 +20,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libxcb-cursor0 libxcb-xinerama0 plasma-integration libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 wget fuse
+        sudo apt-get install -y libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 wget fuse
 
     - name: Install Dependencies
       run: |
@@ -41,7 +41,6 @@ jobs:
           --icon "assets/logo.png" \
           --add-binary "$PLUGINS_DIR/platformthemes/libqgtk3.so:PySide6/Qt/plugins/platformthemes/" \
           --add-binary "$PLUGINS_DIR/platformthemes/libqxdgdesktopportal.so:PySide6/Qt/plugins/platformthemes/" \
-          --add-binary "$PLUGINS_DIR/platformthemes/KDEPlasmaPlatformTheme6.so:PySide6/Qt/plugins/platformthemes/" \
           main.py
 
     - name: Create AppDir structure
