@@ -30,6 +30,8 @@ jobs:
 
     - name: Create Executable
       run: |
+        PYSIDE_DIR=$(python -c "import PySide6; import os; print(os.path.dirname(PySide6.__file__))")
+        
         pyinstaller --noconfirm --onedir --windowed --clean \
           --name "LeShade" \
           --add-data "assets:assets" \
