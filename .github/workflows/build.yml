@@ -20,7 +20,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0 wget fuse
+        sudo apt-get install -y libxcb-cursor0 libxcb-xinerama0 wget fuse
 
     - name: Install Dependencies
       run: |
@@ -32,6 +32,7 @@ jobs:
       run: |
         pyinstaller --noconfirm --onedir --windowed --clean \
           --name "LeShade" \
+          --runtime-hook "rthook.py" \
           --add-data "assets:assets" \
           --icon "assets/logo.png" \
           main.py
