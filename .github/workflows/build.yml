@@ -45,15 +45,18 @@ jobs:
 
     - name: Create Executable
       run: |
-        PYSIDE_DIR=$(python -c "import PySide6; import os; print(os.path.dirname(PySide6.__file__))")
+        PYSIDE_DIR=$(python -c "import PySide6; print(__import__('os').path.dirname(PySide6.__file__))")
+        echo "PySide6 found at: $PYSIDE_DIR"
+
+        PLUGINS_DIR="$PYSIDE_DIR/Qt/plugins"
 
         pyinstaller --noconfirm --onedir --windowed --clean \
           --name "LeShade" \
           --add-data "assets:assets" \
           --icon "assets/logo.png" \
-          --add-binary "$PYSIDE_DIR/plugins/platformthemes/libqgtk3.so:PySide6/Qt/plugins/platformthemes/" \
-          --add-binary "$PYSIDE_DIR/plugins/platformthemes/libqxdgdesktopportal.so:PySide6/Qt/plugins/platformthemes/" \
-          --add-binary "$PYSIDE_DIR/plugins/platformthemes/KDEPlasmaPlatformTheme6.so:PySide6/Qt/plugins/platformthemes/" \
+          --add-binary "$PLUGINS_DIR/platformthemes/libqgtk3.so:PySide6/Qt/plugins/platformthemes/" \
+          --add-binary "$PLUGINS_DIR/platformthemes/libqxdgdesktopportal.so:PySide6/Qt/plugins/platformthemes/" \
+          --add-binary "$PLUGINS_DIR/platformthemes/KDEPlasmaPlatformTheme6.so:PySide6/Qt/plugins/platformthemes/" \
           main.py
 
     - name: Create AppDir structure
