@@ -39,9 +39,10 @@ jobs:
           --name "LeShade" \
           --add-data "assets:assets" \
           --icon "assets/logo.png" \
-          --add-binary "$PLUGINS_DIR/platformthemes/libqgtk3.so:PySide6/Qt/plugins/platformthemes/" \
-          --add-binary "$PLUGINS_DIR/platformthemes/libqxdgdesktopportal.so:PySide6/Qt/plugins/platformthemes/" \
           main.py
+        
+        cp $PLUGINS_DIR/platformthemes/libqgtk3.so dist/LeShade/_internal/PySide6/Qt/plugins/platformthemes
+        cp $PLUGINS_DIR/platformthemes/libqxdgdesktopportal.so dist/LeShade/_internal/PySide6/Qt/plugins/platformthemes
 
     - name: Create AppDir structure
       run: |

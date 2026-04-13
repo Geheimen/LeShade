@@ -7,14 +7,6 @@ import os
 from enum import IntEnum
 from pathlib import Path
 
-if getattr(sys, 'frozen', False):
-    base_path = Path(sys._MEIPASS)
-    
-    plugins_path = str(base_path / "PySide6" / "Qt" / "plugins")
-    
-    os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = plugins_path
-    os.environ["QT_QPA_PLATFORMTHEME"] = "xdgdesktopportal"
-
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
