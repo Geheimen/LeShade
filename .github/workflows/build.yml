@@ -34,7 +34,9 @@ jobs:
           --name "LeShade" \
           --add-data "assets:assets" \
           --icon "assets/logo.png" \
-          --collect-all "PySide6" \
+          --add-binary "$PYSIDE_DIR/plugins/platformthemes/libqgtk3.so:PySide6/Qt/plugins/platformthemes/" \
+          --add-binary "$PYSIDE_DIR/plugins/platformthemes/libqxdgdesktopportal.so:PySide6/Qt/plugins/platformthemes/" \
+          --add-binary "$PYSIDE_DIR/plugins/platformthemes/KDEPlasmaPlatformTheme6.so:PySide6/Qt/plugins/platformthemes/" \
           main.py
 
     - name: Create AppDir structure
